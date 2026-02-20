@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SCS CTM Platform v11</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* ━━━━━━━━━━━━━━━━━━━━━━━ TOKENS ━━━━━━━━━━━━━━━━━━━━━━━ */
 :root{
@@ -330,29 +331,6 @@ tr:hover td{background:rgba(255,255,255,0.012);}
       <button class="lbtn lbtn-a" id="lbtn">
         <span id="lbtn-ic">⚡</span> <span id="lbtn-tx">Logg inn som Admin</span>
       </button>
-      <div class="l-hints">
-        <div class="l-hl">Demo-kontoer — klikk for å fylle inn</div>
-        <div class="hint" data-demo="admin">
-          <span style="font-size:22px;">🔐</span>
-          <div><div class="hint-role" style="color:var(--g);">SCS Admin</div><div class="hint-creds">admin@simplycomplex.no · admin123</div></div>
-          <div class="hint-arrow" style="color:var(--g);">→</div>
-        </div>
-        <div class="hint" data-demo="c1">
-          <span style="font-size:22px;">🏢</span>
-          <div><div class="hint-role" style="color:var(--b1);">Regnskap AS</div><div class="hint-creds">kunde@regnskapclient.no · klient123</div></div>
-          <div class="hint-arrow" style="color:var(--b1);">→</div>
-        </div>
-        <div class="hint" data-demo="c2">
-          <span style="font-size:22px;">🏡</span>
-          <div><div class="hint-role" style="color:var(--b1);">Eiendom Nord</div><div class="hint-creds">kontakt@eiendomnord.no · klient123</div></div>
-          <div class="hint-arrow" style="color:var(--b1);">→</div>
-        </div>
-        <div class="hint" data-demo="c3">
-          <span style="font-size:22px;">💻</span>
-          <div><div class="hint-role" style="color:var(--au);">Tech Solutions</div><div class="hint-creds">admin@techsolutions.no · klient123</div></div>
-          <div class="hint-arrow" style="color:var(--au);">→</div>
-        </div>
-      </div>
     </div>
   </div>
 </div>
@@ -368,7 +346,7 @@ tr:hover td{background:rgba(255,255,255,0.012);}
     </div>
     <div class="asb-mode">
       <div class="asb-pulse"></div>
-      <span id="conn-badge">Demo-modus</span>
+      <span id="conn-badge">Produksjon</span>
     </div>
     <nav class="anav">
       <div class="asl">Oversikt</div>
@@ -1188,7 +1166,7 @@ tr:hover td{background:rgba(255,255,255,0.012);}
     <div class="mhd"><div class="mti">🔐 Glemt passord</div><button class="mcl mo-close">✕</button></div>
     <div class="mbd">
       <div style="background:rgba(47,139,255,.06);border:1px solid rgba(47,139,255,.15);border-radius:10px;padding:14px;margin-bottom:14px;font-size:12.5px;color:var(--m2);line-height:1.6;">
-        Kontakt SCS-teamet for å tilbakestille passordet ditt. Vi kan ikke sende automatisk tilbakestilling i demo-modus.
+        Skriv inn e-posten din, så sender vi en lenke for å tilbakestille passordet.
       </div>
       <div class="fg1"><label class="fgl">Din e-post</label><input class="fgi" id="forgot-em" placeholder="din@email.no" type="email"></div>
     </div>
@@ -1205,94 +1183,37 @@ tr:hover td{background:rgba(255,255,255,0.012);}
 'use strict';
 
 /* ╔═══════════════════════════════════════════════════════════════
-   ║  SUPABASE CONFIG
+   ║  SUPABASE INITIALIZATION
    ╚═══════════════════════════════════════════════════════════════ */
-const SB_CONFIG = { url: '', anonKey: '' };
+// Fyll inn fra Supabase Dashboard → Settings → API
+const _SB_URL = '';
+const _SB_KEY = '';
 
-const SB = {
-  _h() { return { 'Content-Type': 'application/json', 'apikey': SB_CONFIG.anonKey, 'Authorization': 'Bearer ' + SB_CONFIG.anonKey }; },
-  _enabled() { return !!(SB_CONFIG.url && SB_CONFIG.anonKey); },
-  async select(table, params = {}) {
-    if (!this._enabled()) return null;
-    const qs = new URLSearchParams({ select: params.select || '*', ...(params.filter || {}), order: params.order || 'timestamp.desc', limit: params.limit || 100 });
-    try {
-      const r = await fetch(`${SB_CONFIG.url}/rest/v1/${table}?${qs}`, { headers: { ...this._h(), Prefer: 'return=representation' } });
-      return r.ok ? r.json() : null;
-    } catch { return null; }
-  },
-  async rpc(fn, body = {}) {
-    if (!this._enabled()) return null;
-    try {
-      const r = await fetch(`${SB_CONFIG.url}/rest/v1/rpc/${fn}`, { method: 'POST', headers: this._h(), body: JSON.stringify(body) });
-      return r.ok ? r.json() : null;
-    } catch { return null; }
+function _getSBConfig() {
+  try {
+    const s = JSON.parse(localStorage.getItem('scs_sb') || '{}');
+    return { url: s.url || _SB_URL, key: s.key || _SB_KEY };
+  } catch { return { url: _SB_URL, key: _SB_KEY }; }
+}
+
+let sb = null;
+function initSupabase() {
+  const c = _getSBConfig();
+  if (c.url && c.key && window.supabase) {
+    sb = window.supabase.createClient(c.url, c.key);
   }
-};
+  return !!sb;
+}
+initSupabase();
 
 /* ╔═══════════════════════════════════════════════════════════════
-   ║  DATA
+   ║  REFERENCE DATA
    ╚═══════════════════════════════════════════════════════════════ */
-const USERS = {
-  [atob('YWRtaW5Ac2ltcGx5Y29tcGxleC5ubw==')]: { pass:'admin123', role:'admin', name:'Eido' },
-  [atob('a3VuZGVAcmVnbnNrYXBjbGllbnQubm8=')]: {
-    pass:'klient123', role:'client', company:'Regnskap AS', tier:2, icon:'🏢', color:'#2f8bff',
-    agentIdx:[0,2], stats:{ actions:412, leads:14, voices:0 },
-    avtaleKr:11900, besparingKr:52000, timeSaved:68, apiKostKr:1840, apiGrenseKr:2500, contact:'Kari Holm',
-    keyOpenAI:'', keyVapi:'', keyElevenLabs:'', keyTwilioSid:'', keyTwilioToken:'', keyHubspot:'',
-    n8nUrl:'', webhookUrl:'', voiceProvider:'VAPI', generalKnowledge:''
-  },
-  [atob('a29udGFrdEBlaWVuZG9tbm9yZC5ubw==')]: {
-    pass:'klient123', role:'client', company:'Eiendom Nord', tier:1, icon:'🏡', color:'#00e5a0',
-    agentIdx:[1,3,4,5,6], stats:{ actions:58, leads:3, voices:58 },
-    avtaleKr:8500, besparingKr:31000, timeSaved:42, apiKostKr:3120, apiGrenseKr:2500, contact:'Lars Berg',
-    keyOpenAI:'', keyVapi:'', keyElevenLabs:'', keyTwilioSid:'', keyTwilioToken:'', keyHubspot:'',
-    n8nUrl:'', webhookUrl:'', voiceProvider:'ElevenLabs', generalKnowledge:''
-  },
-  [atob('YWRtaW5AdGVjaHNvbHV0aW9ucy5ubw==')]: {
-    pass:'klient123', role:'client', company:'Tech Solutions', tier:3, icon:'💻', color:'#f59e0b',
-    agentIdx:[7,8,9], stats:{ actions:1842, leads:30, voices:14 },
-    avtaleKr:34000, besparingKr:198000, timeSaved:310, apiKostKr:8950, apiGrenseKr:9500, contact:'Hege Larsen',
-    keyOpenAI:'', keyVapi:'', keyElevenLabs:'', keyTwilioSid:'', keyTwilioToken:'', keyHubspot:'',
-    n8nUrl:'', webhookUrl:'', voiceProvider:'VAPI', generalKnowledge:''
-  }
-};
-
 const TIER_CFG = {
   1: { name:'Liten',  max:5,  icon:'⚡', color:'var(--t1)' },
   2: { name:'Medium', max:10, icon:'🚀', color:'var(--t2)' },
   3: { name:'Stor',   max:20, icon:'🏆', color:'var(--t3)' },
 };
-
-let DEMO_MODE = false;
-let CLIENTS = [];
-const CLIENTS_DEMO = [
-  { n:'Regnskap AS',    b:'Regnskap',    t:2, ag:2, act:1189, avtale:11900, besparing:52000,  apiKost:1840,  apiGrense:2500, s:'aktiv', av:'R', c:'#2f8bff', agentIdx:[0,2], voiceProvider:'VAPI', webhook:'' },
-  { n:'Eiendom Nord',   b:'Eiendom',     t:1, ag:5, act:132,  avtale:8500,  besparing:31000,  apiKost:3120,  apiGrense:2500, s:'aktiv', av:'E', c:'#00e5a0', agentIdx:[1,3,4,5,6], voiceProvider:'ElevenLabs', webhook:'' },
-  { n:'Tech Solutions', b:'Teknologi',   t:3, ag:3, act:2775, avtale:34000, besparing:198000, apiKost:8950,  apiGrense:9500, s:'aktiv', av:'T', c:'#f59e0b', agentIdx:[7,8,9], voiceProvider:'VAPI', webhook:'' },
-  { n:'Handel Butikk',  b:'Detaljhandel',t:1, ag:1, act:88,   avtale:7200,  besparing:24000,  apiKost:680,   apiGrense:1500, s:'aktiv', av:'H', c:'#ff6b35' },
-  { n:'Juss Partners',  b:'Juridisk',    t:2, ag:3, act:340,  avtale:18500, besparing:74000,  apiKost:2100,  apiGrense:3000, s:'aktiv', av:'J', c:'#9d60fb' },
-  { n:'Klinikk Vest',   b:'Helse',       t:1, ag:2, act:190,  avtale:6800,  besparing:19500,  apiKost:920,   apiGrense:1500, s:'aktiv', av:'K', c:'#00e5a0' },
-  { n:'Finans Nord',    b:'Finans',      t:2, ag:4, act:560,  avtale:22000, besparing:89000,  apiKost:4200,  apiGrense:4000, s:'aktiv', av:'F', c:'#2f8bff' },
-  { n:'Logistikk AS',   b:'Transport',   t:1, ag:1, act:67,   avtale:5500,  besparing:14000,  apiKost:440,   apiGrense:1000, s:'aktiv', av:'L', c:'#ff6b35' },
-  { n:'Media Group',    b:'Media',       t:2, ag:5, act:445,  avtale:15000, besparing:55000,  apiKost:1750,  apiGrense:2500, s:'aktiv', av:'M', c:'#9d60fb' },
-  { n:'Hotell Nord',    b:'Reiseliv',    t:1, ag:2, act:144,  avtale:9200,  besparing:27000,  apiKost:1100,  apiGrense:2000, s:'aktiv', av:'H', c:'#f59e0b' },
-  { n:'Startup Lab',    b:'Teknologi',   t:1, ag:1, act:44,   avtale:4800,  besparing:12000,  apiKost:310,   apiGrense:800,  s:'aktiv', av:'S', c:'#00e5a0' },
-  { n:'Bygg Sør AS',    b:'Bygg',        t:2, ag:4, act:290,  avtale:9900,  besparing:32000,  apiKost:850,   apiGrense:2000, s:'aktiv', av:'B', c:'#ff6b35' },
-];
-
-const AGENTS = [
-  { nm:'Email Support',  em:'📬', bg:'rgba(0,229,160,0.1)',   ch:'Gmail · HubSpot',      act:412,  rate:96, status:'aktiv', klient:'Regnskap AS', tone:'Profesjonell', greeting:'', knowledge:'', clientKnowledge:'', clientFeedback:'', webhook:'', voiceName:'Sofia' },
-  { nm:'Voice Agent',    em:'📞', bg:'rgba(47,139,255,0.1)',  ch:'VAPI · HubSpot',       act:58,   rate:91, status:'aktiv', klient:'Eiendom Nord', tone:'Vennlig', greeting:'Hei! Du har ringt Eiendom Nord.', knowledge:'', clientKnowledge:'', clientFeedback:'', webhook:'', voiceName:'Sofia' },
-  { nm:'Lead Capture',   em:'🎯', bg:'rgba(255,107,53,0.1)',  ch:'Email · CRM',          act:777,  rate:88, status:'aktiv', klient:'Regnskap AS', tone:'Profesjonell', greeting:'', knowledge:'', clientKnowledge:'', clientFeedback:'', webhook:'', voiceName:'Sofia' },
-  { nm:'Booking Bot',    em:'📅', bg:'rgba(157,96,251,0.1)',  ch:'Website · Email',      act:22,   rate:93, status:'aktiv', klient:'Eiendom Nord', tone:'Vennlig', greeting:'', knowledge:'', clientKnowledge:'', clientFeedback:'', webhook:'', voiceName:'Sofia' },
-  { nm:'Social Agent',   em:'📱', bg:'rgba(245,158,11,0.1)',  ch:'Instagram · FB',       act:14,   rate:85, status:'aktiv', klient:'Eiendom Nord', tone:'Uformell', greeting:'', knowledge:'', clientKnowledge:'', clientFeedback:'', webhook:'', voiceName:'Sofia' },
-  { nm:'CRM Sync',       em:'🏢', bg:'rgba(0,229,160,0.1)',   ch:'HubSpot',              act:31,   rate:99, status:'aktiv', klient:'Eiendom Nord', tone:'Teknisk', greeting:'', knowledge:'', clientKnowledge:'', clientFeedback:'', webhook:'', voiceName:'Sofia' },
-  { nm:'Review Bot',     em:'⭐', bg:'rgba(47,139,255,0.1)',  ch:'Google · Trustpilot',  act:7,    rate:100, status:'aktiv', klient:'Eiendom Nord', tone:'Vennlig', greeting:'', knowledge:'', clientKnowledge:'', clientFeedback:'', webhook:'', voiceName:'Sofia' },
-  { nm:'Enterprise AI',  em:'⚡', bg:'rgba(245,158,11,0.1)',  ch:'Multi-kanal',          act:1842, rate:97, status:'aktiv', klient:'Tech Solutions', tone:'Profesjonell', greeting:'', knowledge:'', clientKnowledge:'', clientFeedback:'', webhook:'', voiceName:'Sofia' },
-  { nm:'API Agent',      em:'🔗', bg:'rgba(157,96,251,0.1)',  ch:'REST · Webhook',       act:621,  rate:99, status:'aktiv', klient:'Tech Solutions', tone:'Teknisk', greeting:'', knowledge:'', clientKnowledge:'', clientFeedback:'', webhook:'', voiceName:'Sofia' },
-  { nm:'Data Enricher',  em:'📊', bg:'rgba(255,107,53,0.1)',  ch:'CRM · DB',             act:312,  rate:95, status:'aktiv', klient:'Tech Solutions', tone:'Profesjonell', greeting:'', knowledge:'', clientKnowledge:'', clientFeedback:'', webhook:'', voiceName:'Sofia' },
-];
-
 const ACT_T = [
   { ic:'📬', bg:'rgba(0,229,160,0.1)',   msg: co => `<strong>${co}</strong> svarte automatisk på e-post` },
   { ic:'🎯', bg:'rgba(255,107,53,0.1)',  msg: _  => `<strong>Ny lead</strong> fanget og registrert i CRM` },
@@ -1315,8 +1236,43 @@ const LOG_T = [
 let CU = null;
 let loginRole = 'admin';
 let selTier = 1;
-let rtA = null, rtC = null;
 let _lastClient = {};
+let CLIENTS = [];
+let AGENTS = [];
+
+/* ╔═══════════════════════════════════════════════════════════════
+   ║  DATA MAPPING (Supabase → internal format)
+   ╚═══════════════════════════════════════════════════════════════ */
+function mapClient(c) {
+  return {
+    id: c.id, n: c.name, b: c.bransje || '', t: c.tier_id,
+    ag: parseInt(c.agent_count) || 0, act: parseInt(c.total_actions) || 0,
+    avtale: c.avtale_kr || 0, besparing: c.besparing_kr || 0,
+    roi: parseFloat(c.roi) || 0,
+    apiKost: parseFloat(c.api_kost_kr) || 0, apiGrense: parseFloat(c.api_grense_kr) || 0,
+    s: c.status || 'aktiv', av: c.avatar_letter || c.name?.[0] || '?',
+    c: c.avatar_color || '#2f8bff',
+    contactName: c.contact_name || '', contactEmail: c.contact_email || '',
+    generalKnowledge: c.general_knowledge || '',
+    voiceProvider: c.voice_provider || 'VAPI',
+    webhookUrl: c.webhook_url || '', n8nUrl: c.n8n_url || '',
+    agents: [],
+  };
+}
+
+function mapAgent(a) {
+  return {
+    id: a.id, clientId: a.client_id,
+    nm: a.name, em: a.emoji || '🤖',
+    bg: a.bg_color || 'rgba(47,139,255,0.1)', ch: a.channels || '',
+    act: a.total_actions || 0, rate: parseFloat(a.success_rate) || 0,
+    status: a.status || 'aktiv', klient: a.client_name || '',
+    tone: a.tone || 'Profesjonell', greeting: a.greeting || '',
+    knowledge: a.knowledge || '', clientKnowledge: a.client_knowledge || '',
+    clientFeedback: a.client_feedback || '', webhook: a.webhook_url || '',
+    voiceName: a.voice_name || 'Sofia',
+  };
+}
 
 /* ╔═══════════════════════════════════════════════════════════════
    ║  UTILS
@@ -1324,58 +1280,37 @@ let _lastClient = {};
 function el(id) { return document.getElementById(id); }
 
 function animV(id, val) {
-  const e = el(id);
-  if (!e) return;
-  e.classList.remove('anim-v');
-  void e.offsetWidth;
-  e.classList.add('anim-v');
-  e.textContent = val;
+  const e = el(id); if (!e) return;
+  e.classList.remove('anim-v'); void e.offsetWidth;
+  e.classList.add('anim-v'); e.textContent = val;
 }
-
-function liveV(id, val) {
-  const e = el(id);
-  if (e) e.textContent = val;
-}
+function liveV(id, val) { const e = el(id); if (e) e.textContent = val; }
 
 function toast(msg, type = 'ok') {
-  const color = { ok: 'var(--g)', err: 'var(--er)', warn: 'var(--wa)', info: 'var(--b1)' }[type] || 'var(--g)';
+  const color = { ok:'var(--g)', err:'var(--er)', warn:'var(--wa)', info:'var(--b1)' }[type] || 'var(--g)';
   const t = document.createElement('div');
   t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 20px;background:var(--s2);border:1px solid ${color};border-radius:10px;color:${color};font-family:'DM Mono',monospace;font-size:12px;pointer-events:none;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:fadeIn 0.2s ease;`;
   t.textContent = msg;
   document.body.appendChild(t);
-  setTimeout(() => { t.style.transition = 'opacity .3s'; t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 2400);
+  setTimeout(() => { t.style.transition='opacity .3s'; t.style.opacity='0'; setTimeout(() => t.remove(), 300); }, 2400);
 }
 
 function buildChart(id, color, vals) {
-  const e = el(id);
-  if (!e) return;
+  const e = el(id); if (!e) return;
   e.innerHTML = '';
   const mx = Math.max(...vals, 1);
   vals.forEach((v, i) => {
     const b = document.createElement('div');
     b.className = 'mcb';
-    b.style.cssText = `height:${Math.max(v / mx * 100, 6)}%;background:${color};opacity:${i === vals.length - 1 ? '0.9' : '0.35'};`;
+    b.style.cssText = `height:${Math.max(v/mx*100,6)}%;background:${color};opacity:${i===vals.length-1?'0.9':'0.35'};`;
     e.appendChild(b);
   });
 }
 
-function openModal(id) {
-  const m = el(id);
-  if (m) m.classList.add('on');
-}
-function closeModal(id) {
-  const m = el(id);
-  if (m) m.classList.remove('on');
-}
-
-function clearAllRT() {
-  clearInterval(rtA);
-  clearInterval(rtC);
-  rtA = rtC = null;
-}
-
+function openModal(id) { const m = el(id); if (m) m.classList.add('on'); }
+function closeModal(id) { const m = el(id); if (m) m.classList.remove('on'); }
 function fmtKr(n) { return Math.round(n).toLocaleString('no-NO') + ' kr'; }
-function fmtKrK(n) { return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : fmtKr(n); }
+function fmtKrK(n) { return n >= 1000 ? (n/1000).toFixed(1) + 'k' : fmtKr(n); }
 
 /* ╔═══════════════════════════════════════════════════════════════
    ║  NAVIGATION
@@ -1383,19 +1318,14 @@ function fmtKrK(n) { return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : fmtKr(n); 
 function aGo(pageId) {
   document.querySelectorAll('#v-admin .pg').forEach(p => p.classList.remove('on'));
   document.querySelectorAll('.ani').forEach(n => n.classList.remove('on'));
-  const p = el('pg-' + pageId);
-  if (p) p.classList.add('on');
-  const navItem = document.querySelector(`.ani[data-page="${pageId}"]`);
-  if (navItem) navItem.classList.add('on');
+  const p = el('pg-' + pageId); if (p) p.classList.add('on');
+  const ni = document.querySelector(`.ani[data-page="${pageId}"]`); if (ni) ni.classList.add('on');
 }
-
 function cGo(pageId) {
   document.querySelectorAll('.cpg').forEach(p => p.classList.remove('on'));
   document.querySelectorAll('.cni').forEach(n => n.classList.remove('on'));
-  const p = el('cpg-' + pageId);
-  if (p) p.classList.add('on');
-  const navItem = document.querySelector(`.cni[data-cpage="${pageId}"]`);
-  if (navItem) navItem.classList.add('on');
+  const p = el('cpg-' + pageId); if (p) p.classList.add('on');
+  const ni = document.querySelector(`.cni[data-cpage="${pageId}"]`); if (ni) ni.classList.add('on');
 }
 
 /* ╔═══════════════════════════════════════════════════════════════
@@ -1404,57 +1334,97 @@ function cGo(pageId) {
 function tickClock() {
   const t = new Date().toLocaleTimeString('no-NO');
   const a = el('a-clk'), c = el('c-clk');
-  if (a) a.textContent = t;
-  if (c) c.textContent = t;
+  if (a) a.textContent = t; if (c) c.textContent = t;
 }
-setInterval(tickClock, 1000);
-tickClock();
+setInterval(tickClock, 1000); tickClock();
 
 /* ╔═══════════════════════════════════════════════════════════════
    ║  AUTH
    ╚═══════════════════════════════════════════════════════════════ */
-function doLogin() {
+async function doLogin() {
   const email = el('lin-em').value.trim().toLowerCase();
   const pw = el('lin-pw').value;
   const errEl = el('lerr');
   errEl.classList.remove('on');
-  const u = USERS[email];
-  if (!u || u.pass !== pw) { errEl.classList.add('on'); return; }
-  CU = { ...u, email };
-  CLIENTS.length = 0;
-  if (DEMO_MODE) CLIENTS_DEMO.forEach(c => CLIENTS.push(c));
+
+  if (!sb) {
+    errEl.textContent = 'Supabase er ikke konfigurert. Fyll inn URL og Key i Innstillinger.';
+    errEl.classList.add('on');
+    return;
+  }
+
+  const btn = el('lbtn');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<span>⏳</span> <span>Logger inn...</span>'; btn.disabled = true;
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+  if (error) {
+    errEl.textContent = error.message === 'Invalid login credentials' ? 'Feil e-post eller passord.' : error.message;
+    errEl.classList.add('on');
+    btn.innerHTML = orig; btn.disabled = false;
+    return;
+  }
+
+  const { data: profile, error: profErr } = await sb.from('users').select('*').eq('auth_id', data.user.id).single();
+  if (profErr || !profile) {
+    errEl.textContent = 'Ingen brukerprofil funnet. Kontakt admin.';
+    errEl.classList.add('on');
+    btn.innerHTML = orig; btn.disabled = false;
+    await sb.auth.signOut();
+    return;
+  }
+
+  CU = profile;
+  btn.innerHTML = orig; btn.disabled = false;
   el('v-login').classList.remove('on');
+
   if (CU.role === 'admin') {
     el('v-admin').classList.add('on');
-    bootAdmin();
+    await bootAdmin();
   } else {
     el('v-client').classList.add('on');
-    bootClient();
+    await bootClient();
   }
 }
 
-function logout() {
+async function logout() {
+  if (sb) await sb.auth.signOut();
   CU = null;
-  DEMO_MODE = false;
   CLIENTS.length = 0;
-  clearAllRT();
+  AGENTS.length = 0;
   el('v-admin').classList.remove('on');
   el('v-client').classList.remove('on');
   el('v-login').classList.add('on');
-  el('lin-em').value = '';
-  el('lin-pw').value = '';
+  el('lin-em').value = ''; el('lin-pw').value = '';
+}
+
+/* ╔═══════════════════════════════════════════════════════════════
+   ║  DATA LOADING
+   ╚═══════════════════════════════════════════════════════════════ */
+async function loadAdminData() {
+  const { data: clients } = await sb.from('v_client_summary').select('*').order('created_at', { ascending: false });
+  const { data: agents } = await sb.from('v_agent_overview').select('*').order('created_at', { ascending: false });
+
+  CLIENTS = (clients || []).map(mapClient);
+  AGENTS = (agents || []).map(mapAgent);
+
+  CLIENTS.forEach(cl => {
+    cl.agents = AGENTS.filter(a => a.clientId === cl.id);
+    cl.ag = cl.agents.length;
+    cl.act = cl.agents.reduce((s, a) => s + a.act, 0);
+  });
 }
 
 /* ╔═══════════════════════════════════════════════════════════════
    ║  ADMIN BOOT
    ╚═══════════════════════════════════════════════════════════════ */
 async function bootAdmin() {
-  el('a-av').textContent = CU.name[0];
-  el('a-uname').textContent = CU.name;
-  setConnBadge(false);
+  el('a-av').textContent = (CU.display_name || 'A')[0];
+  el('a-uname').textContent = CU.display_name || 'Admin';
+  setConnBadge(true);
 
-  const live = SB._enabled() ? await fetchLiveData() : false;
-  if (!live) initAdminCharts();
+  await loadAdminData();
+
   renderAdminFeed();
   renderLogFeed();
   renderAgentCards();
@@ -1464,30 +1434,14 @@ async function bootAdmin() {
   renderApiKostnader();
   renderFakturering();
   updateAdminStats();
-
-  clearAllRT();
-  rtA = setInterval(() => {
-    CLIENTS.forEach(cl => { cl.act += Math.floor(Math.random() * 4); });
-    AGENTS.forEach(a => { a.act += Math.floor(Math.random() * 2); });
-    updateAdminStatsLive();
-    if (Math.random() > 0.6) pushAdminFeed();
-    if (Math.random() > 0.7) pushLog();
-  }, 8000);
+  initAdminCharts();
 }
 
 function setConnBadge(live) {
-  const badge = el('conn-badge');
-  if (!badge) return;
-  badge.textContent = live ? '● Supabase Live' : '◎ Demo-modus';
-  const sb = badge.closest('.asb-mode');
-  if (sb) sb.style.color = live ? 'var(--g)' : 'var(--mu)';
-}
-
-async function fetchLiveData() {
-  const summary = await SB.select('v_today_summary');
-  if (!summary) return false;
-  setConnBadge(true);
-  return true;
+  const badge = el('conn-badge'); if (!badge) return;
+  badge.textContent = live ? '● Supabase Live' : '◎ Ikke tilkoblet';
+  const sb2 = badge.closest('.asb-mode');
+  if (sb2) sb2.style.color = live ? 'var(--g)' : 'var(--mu)';
 }
 
 function updateAdminStats() {
@@ -1496,94 +1450,64 @@ function updateAdminStats() {
   const totalAct       = CLIENTS.reduce((s, cl) => s + (cl.act || 0), 0);
   const avgROI         = CLIENTS.length ? (CLIENTS.reduce((s, cl) => s + (cl.besparing || 0) / (cl.avtale || 1), 0) / CLIENTS.length).toFixed(1) : 0;
   const totAg          = AGENTS.length;
+  const leads          = Math.floor(totalAct * 0.034);
 
-  animV('adb-act',    totalAct.toLocaleString('no-NO'));
-  animV('adb-leads',  Math.floor(totalAct * 0.034));
-  animV('adb-cl',     CLIENTS.length);
-  animV('adb-ag',     totAg);
-  animV('adb-em',     AGENTS[0]?.act.toLocaleString('no-NO') || 0);
-  animV('adb-vo',     AGENTS[1]?.act.toLocaleString('no-NO') || 0);
-  animV('adb-lc',     Math.floor(totalAct * 0.034));
-  animV('aa1',        AGENTS[0]?.act.toLocaleString('no-NO') || 0);
-  animV('aa2',        AGENTS[1]?.act.toLocaleString('no-NO') || 0);
-  animV('aa3',        AGENTS[2]?.act.toLocaleString('no-NO') || 0);
-  animV('aa4',        AGENTS[7]?.act.toLocaleString('no-NO') || 0);
+  animV('adb-act', totalAct.toLocaleString('no-NO'));
+  animV('adb-leads', leads);
+  animV('adb-cl', CLIENTS.length);
+  animV('adb-ag', totAg);
+  animV('adb-em', AGENTS[0]?.act?.toLocaleString('no-NO') || '0');
+  animV('adb-vo', AGENTS[1]?.act?.toLocaleString('no-NO') || '0');
+  animV('adb-lc', leads);
+  animV('aa1', AGENTS[0]?.act?.toLocaleString('no-NO') || '0');
+  animV('aa2', AGENTS[1]?.act?.toLocaleString('no-NO') || '0');
+  animV('aa3', AGENTS[2]?.act?.toLocaleString('no-NO') || '0');
+  animV('aa4', AGENTS[3]?.act?.toLocaleString('no-NO') || '0');
 
-  animV('kl-mrr',     fmtKrK(totalMRR));
-  animV('kl-tot',     CLIENTS.length);
-  animV('kl-ag',      totAg);
+  animV('kl-mrr', fmtKrK(totalMRR));
+  animV('kl-tot', CLIENTS.length);
+  animV('kl-ag', totAg);
+  animV('sb-cl', CLIENTS.length);
+  animV('sb-ag', totAg);
 
-  animV('roi-h',      Math.round(totalMRR * 0.68 / 600) + 't');
-  animV('roi-s',      fmtKr(totalBesparing));
-  animV('roi-mrr',    fmtKr(totalMRR));
-  animV('roi-n',      fmtKr(totalBesparing - totalMRR));
+  animV('roi-h', Math.round(totalMRR * 0.68 / 600) + 't');
+  animV('roi-s', fmtKr(totalBesparing));
+  animV('roi-mrr', fmtKr(totalMRR));
+  animV('roi-n', fmtKr(totalBesparing - totalMRR));
 
-  // Avtaler page
-  animV('av-mrr',      fmtKr(totalMRR));
+  animV('av-mrr', fmtKr(totalMRR));
   animV('av-besparing', fmtKrK(totalBesparing));
-  animV('av-roi',      avgROI + 'x');
-  animV('av-antall',  CLIENTS.length);
+  animV('av-roi', avgROI + 'x');
+  animV('av-antall', CLIENTS.length);
 
-  // Settings
-  const admMrr = el('adm-mrr-set');
-  if (admMrr) admMrr.textContent = fmtKr(totalMRR);
-  const admRoi = el('adm-avg-roi-set');
-  if (admRoi) admRoi.textContent = avgROI + 'x';
-
-  // Agenter page
+  const admMrr = el('adm-mrr-set'); if (admMrr) admMrr.textContent = fmtKr(totalMRR);
+  const admRoi = el('adm-avg-roi-set'); if (admRoi) admRoi.textContent = avgROI + 'x';
   animV('adm-tot-besparing', fmtKr(totalBesparing));
   animV('ag-tot', totalAct.toLocaleString('no-NO'));
-
-  // Fakturering
   animV('fak-mrr', fmtKr(totalMRR));
   animV('fak-arr', (totalMRR * 12 >= 1000000 ? (totalMRR * 12 / 1000000).toFixed(2) + 'M' : fmtKrK(totalMRR * 12)));
-
-  // Klienter maxed
-  const maxed = CLIENTS.filter(cl => cl.ag >= TIER_CFG[cl.t]?.max).length;
+  const maxed = CLIENTS.filter(cl => cl.ag >= (TIER_CFG[cl.t]?.max || 999)).length;
   animV('kl-max', maxed);
-
-  renderAvtaleTabell();
-  renderApiKostnader();
-  renderClientsTable();
-}
-
-function updateAdminStatsLive() {
-  const totalMRR       = CLIENTS.reduce((s, cl) => s + (cl.avtale || 0), 0);
-  const totalBesparing = CLIENTS.reduce((s, cl) => s + (cl.besparing || 0), 0);
-  const totalAct       = CLIENTS.reduce((s, cl) => s + (cl.act || 0), 0);
-  const totAg          = AGENTS.length;
-
-  liveV('adb-act',    totalAct.toLocaleString('no-NO'));
-  liveV('adb-leads',  Math.floor(totalAct * 0.034));
-  liveV('adb-cl',     CLIENTS.length);
-  liveV('adb-ag',     totAg);
-  liveV('adb-em',     AGENTS[0]?.act.toLocaleString('no-NO') || 0);
-  liveV('adb-vo',     AGENTS[1]?.act.toLocaleString('no-NO') || 0);
-  liveV('adb-lc',     Math.floor(totalAct * 0.034));
-  liveV('aa1',        AGENTS[0]?.act.toLocaleString('no-NO') || 0);
-  liveV('aa2',        AGENTS[1]?.act.toLocaleString('no-NO') || 0);
-  liveV('aa3',        AGENTS[2]?.act.toLocaleString('no-NO') || 0);
-  liveV('aa4',        AGENTS[7]?.act.toLocaleString('no-NO') || 0);
-  liveV('ag-tot',     totalAct.toLocaleString('no-NO'));
 }
 
 /* ── CHARTS ── */
 function initAdminCharts() {
-  buildChart('adb-emc', '#00e5a0', [280,310,290,350,320,380,412]);
-  buildChart('adb-vmc', '#2f8bff', [38,45,40,52,47,54,58]);
-  buildChart('adb-lmc', '#ff6b35', [28,34,30,40,36,42,47]);
+  const emVals = AGENTS.filter(a => a.ch?.includes('Email') || a.ch?.includes('Gmail')).map(a => a.act);
+  const voVals = AGENTS.filter(a => a.ch?.includes('VAPI') || a.ch?.includes('Voice')).map(a => a.act);
+  buildChart('adb-emc', '#00e5a0', emVals.length ? emVals : [0]);
+  buildChart('adb-vmc', '#2f8bff', voVals.length ? voVals : [0]);
+  buildChart('adb-lmc', '#ff6b35', CLIENTS.map(c => Math.floor(c.act * 0.034)) || [0]);
 }
 
 /* ── FEEDS ── */
 function renderAdminFeed() {
-  const feed = el('a-feed');
-  if (!feed) return;
+  const feed = el('a-feed'); if (!feed) return;
   feed.innerHTML = '';
-  for (let i = 0; i < 5; i++) pushAdminFeed(false);
+  if (CLIENTS.length) for (let i = 0; i < 5; i++) pushAdminFeed(false);
+  else feed.innerHTML = '<div style="padding:16px;color:var(--mu);font-size:12.5px;text-align:center;">Ingen aktivitet enda. Opprett din forste klient!</div>';
 }
 function pushAdminFeed(flash = true) {
-  const feed = el('a-feed');
-  if (!feed) return;
+  const feed = el('a-feed'); if (!feed || !CLIENTS.length) return;
   const t = ACT_T[Math.floor(Math.random() * ACT_T.length)];
   const cl = CLIENTS[Math.floor(Math.random() * CLIENTS.length)];
   const now = new Date().toLocaleTimeString('no-NO');
@@ -1595,14 +1519,12 @@ function pushAdminFeed(flash = true) {
 }
 
 function renderLogFeed() {
-  const feed = el('log-feed');
-  if (!feed) return;
+  const feed = el('log-feed'); if (!feed) return;
   feed.innerHTML = '';
   for (let i = 0; i < 10; i++) pushLog(false);
 }
 function pushLog(flash = true) {
-  const feed = el('log-feed');
-  if (!feed) return;
+  const feed = el('log-feed'); if (!feed) return;
   const t = LOG_T[Math.floor(Math.random() * LOG_T.length)];
   const now = new Date().toLocaleString('no-NO');
   const e = document.createElement('div');
@@ -1614,48 +1536,53 @@ function pushLog(flash = true) {
 
 /* ── AGENT CARDS ── */
 function renderAgentCards() {
-  const g = el('ag-cards');
-  if (!g) return;
+  const g = el('ag-cards'); if (!g) return;
   g.innerHTML = '';
-  AGENTS.slice(0, 4).forEach((a, i) => {
+  if (!AGENTS.length) {
+    g.innerHTML = '<div class="card" style="padding:30px;text-align:center;grid-column:1/-1;"><div style="font-size:28px;margin-bottom:8px;">🤖</div><div style="color:var(--mu);font-size:13px;">Ingen agenter opprettet enda.</div></div>';
+    return;
+  }
+  AGENTS.slice(0, 8).forEach((a, i) => {
     const rc = a.rate >= 90 ? 'var(--g)' : a.rate >= 80 ? 'var(--o)' : 'var(--er)';
     const d = document.createElement('div');
-    d.className = 'card';
-    d.style.padding = '17px';
+    d.className = 'card'; d.style.padding = '17px';
     d.innerHTML = `
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
         <div style="display:flex;align-items:center;gap:10px;">
           <div style="width:36px;height:36px;border-radius:9px;background:${a.bg};display:flex;align-items:center;justify-content:center;font-size:16px;">${a.em}</div>
-          <div><div style="font-weight:700;font-size:13px;">${a.nm}</div><div class="tmn" style="margin-top:2px;">${a.ch}</div></div>
+          <div><div style="font-weight:700;font-size:13px;">${a.nm}</div><div class="tmn" style="margin-top:2px;">${a.ch}</div><div class="tmn" style="font-size:10px;">${a.klient}</div></div>
         </div>
-        <span class="bge ${a.status === 'aktiv' ? 'ba' : 'bp'}">${a.status.toUpperCase()}</span>
+        <span class="bge ${a.status==='aktiv'?'ba':'bp'}">${(a.status||'aktiv').toUpperCase()}</span>
       </div>
       <div style="display:flex;gap:14px;border-top:1px solid var(--b);padding-top:11px;margin-bottom:11px;">
-        <div><div style="font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:19px;" id="agc-${i}">${a.act.toLocaleString('no-NO')}</div><div class="tmn">Handlinger</div></div>
+        <div><div style="font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:19px;">${a.act.toLocaleString('no-NO')}</div><div class="tmn">Handlinger</div></div>
         <div><div style="font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:16px;color:${rc};">${a.rate}%</div><div class="tmn">Suksessrate</div></div>
       </div>
       <div style="display:flex;gap:6px;">
         <button class="btn btn-gh btn-sm ag-pause-btn">⏸ Pause</button>
         <button class="btn btn-gh btn-sm ag-edit-btn">✏️ Rediger</button>
       </div>`;
-    const pauseBtn = d.querySelector('.ag-pause-btn');
-    pauseBtn.addEventListener('click', () => {
-      if (a.status === 'aktiv') { a.status = 'pause'; pauseBtn.textContent = '▶ Fortsett'; toast(a.nm + ' satt på pause', 'warn'); }
-      else { a.status = 'aktiv'; pauseBtn.textContent = '⏸ Pause'; toast(a.nm + ' gjenopptatt ✓'); }
-      d.querySelector('.bge').textContent = a.status === 'aktiv' ? 'AKTIV' : 'PAUSE';
-      d.querySelector('.bge').className = 'bge ' + (a.status === 'aktiv' ? 'ba' : 'bp');
+    d.querySelector('.ag-pause-btn').addEventListener('click', async () => {
+      const newS = a.status === 'aktiv' ? 'pauset' : 'aktiv';
+      await sb.from('agents').update({ status: newS }).eq('id', a.id);
+      a.status = newS;
+      renderAgentCards();
+      toast(a.nm + (newS === 'aktiv' ? ' gjenopptatt' : ' satt pa pause'), newS === 'aktiv' ? 'ok' : 'warn');
     });
     d.querySelector('.ag-edit-btn').addEventListener('click', () => {
       openDynModal('m-edit-agent', `<div class="mhd"><div class="mti">✏️ Rediger agent</div><button class="mcl mo-close">✕</button></div>
         <div class="mbd"><div class="fg1"><label class="fgl">Navn</label><input class="fgi" id="ea-nm" value="${a.nm}"></div>
         <div class="fg1"><label class="fgl">Kanal</label><input class="fgi" id="ea-ch" value="${a.ch}"></div></div>
         <div class="mft"><button class="btn btn-gh mo-close">Avbryt</button>
-        <button class="btn btn-g mo-close" id="ea-save">💾 Lagre</button></div>`);
-      el('ea-save').addEventListener('click', () => {
-        a.nm = el('ea-nm').value || a.nm;
-        a.ch = el('ea-ch').value || a.ch;
+        <button class="btn btn-g" id="ea-save">💾 Lagre</button></div>`);
+      el('ea-save').addEventListener('click', async () => {
+        const nm = el('ea-nm').value || a.nm;
+        const ch = el('ea-ch').value || a.ch;
+        await sb.from('agents').update({ name: nm, channels: ch }).eq('id', a.id);
+        a.nm = nm; a.ch = ch;
         renderAgentCards();
-        toast('Agent oppdatert ✓');
+        closeModal('m-edit-agent');
+        toast('Agent oppdatert');
       });
     });
     g.appendChild(d);
@@ -1664,34 +1591,40 @@ function renderAgentCards() {
 
 /* ── CLIENTS TABLE ── */
 function renderClientsTable(filt = '', tier = '') {
-  const tb = el('cl-tbody');
-  if (!tb) return;
+  const tb = el('cl-tbody'); if (!tb) return;
   const tn = { 1:'⚡ Liten', 2:'🚀 Medium', 3:'🏆 Stor' };
   const filtered = CLIENTS.filter(cl => {
     if (filt && !cl.n.toLowerCase().includes(filt.toLowerCase()) && !cl.b.toLowerCase().includes(filt.toLowerCase())) return false;
     if (tier && cl.t !== parseInt(tier)) return false;
     return true;
   });
-  tb.innerHTML = filtered.map(cl => {
+  if (!filtered.length) {
+    tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--mu);">Ingen klienter enda. Klikk \"+ Ny klient\" for a opprette.</td></tr>';
+    return;
+  }
+  tb.innerHTML = filtered.map((cl, idx) => {
     const roi = cl.avtale ? (cl.besparing / cl.avtale).toFixed(1) : '—';
-    const roiColor = roi >= 4 ? 'var(--g)' : roi >= 3 ? 'var(--au)' : 'var(--m2)';
+    const rc = roi >= 4 ? 'var(--g)' : roi >= 3 ? 'var(--au)' : 'var(--m2)';
     return `<tr>
       <td><div style="display:flex;align-items:center;gap:9px;">
         <div class="av" style="background:${cl.c}22;color:${cl.c};">${cl.av}</div>
         <div><div style="font-weight:600;">${cl.n}</div><div class="tmn">${cl.b}</div></div>
       </div></td>
-      <td><span class="bge" style="font-size:9.5px;">${tn[cl.t] || '—'}</span></td>
+      <td><span class="bge" style="font-size:9.5px;">${tn[cl.t]||'—'}</span></td>
       <td class="tmn">${cl.ag}</td>
-      <td class="tmn">${(cl.act || 0).toLocaleString('no-NO')}</td>
+      <td class="tmn">${(cl.act||0).toLocaleString('no-NO')}</td>
       <td style="font-family:'DM Mono',monospace;font-weight:700;">${fmtKr(cl.avtale)}</td>
       <td style="font-family:'DM Mono',monospace;color:var(--g);font-weight:600;">${fmtKr(cl.besparing)}</td>
-      <td style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:14px;color:${roiColor};">${roi}x</td>
-      <td><span class="bge ${cl.s === 'aktiv' ? 'ba' : 'bp'}">${cl.s.toUpperCase()}</span></td>
-      <td><button class="btn btn-gh btn-sm cl-det-btn" data-idx="${CLIENTS.indexOf(cl)}">Detaljer</button></td>
+      <td style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:14px;color:${rc};">${roi}x</td>
+      <td><span class="bge ${cl.s==='aktiv'?'ba':'bp'}">${cl.s.toUpperCase()}</span></td>
+      <td><button class="btn btn-gh btn-sm cl-det-btn" data-id="${cl.id}">Detaljer</button></td>
     </tr>`;
   }).join('');
   tb.querySelectorAll('.cl-det-btn').forEach(btn => {
-    btn.addEventListener('click', () => visKlientDetaljer(CLIENTS[parseInt(btn.dataset.idx)]));
+    btn.addEventListener('click', () => {
+      const cl = CLIENTS.find(c => c.id === btn.dataset.id);
+      if (cl) visKlientDetaljer(cl);
+    });
   });
 }
 
@@ -1699,188 +1632,156 @@ function visKlientDetaljer(cl) {
   const roi = cl.avtale ? (cl.besparing / cl.avtale).toFixed(1) : '—';
   const tn = { 1:'⚡ Liten', 2:'🚀 Medium', 3:'🏆 Stor' };
   const s = cl.s || 'aktiv';
-  const statusLabel = s === 'aktiv' ? '✅ Aktiv' : s === 'pause' ? '⏸ Pause' : '📦 Arkivert';
-  const statusColor = s === 'aktiv' ? 'var(--g)' : s === 'pause' ? 'var(--wa)' : 'var(--mu)';
+  const sLabel = s==='aktiv' ? '✅ Aktiv' : s==='pauset' ? '⏸ Pause' : '📦 Arkivert';
+  const sColor = s==='aktiv' ? 'var(--g)' : s==='pauset' ? 'var(--wa)' : 'var(--mu)';
 
-  // Build agent knowledge blocks
-  const agenter = (cl.agentIdx||[]).map(i => AGENTS[i]).filter(Boolean);
+  const agenter = cl.agents || [];
   const agKnowHtml = agenter.length
-    ? agenter.map((a, ai) => {
-        const idx = cl.agentIdx[ai];
+    ? agenter.map(a => {
         const tones = ['Profesjonell','Vennlig','Uformell','Teknisk'].map(t =>
           '<option' + ((a.tone||'Profesjonell')===t?' selected':'') + '>' + t + '</option>').join('');
         return '<div style="border:1px solid var(--b2);border-radius:10px;padding:12px;margin-bottom:10px;">'
           + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'
           + '<span style="font-size:14px;">' + (a.em||'🤖') + '</span>'
           + '<div style="flex:1;font-weight:700;font-size:12.5px;">' + a.nm + '</div>'
-          + '<select class="fgs adm-ag-status" data-idx="' + idx + '" style="font-size:11px;width:auto;padding:3px 7px;">'
+          + '<select class="fgs adm-ag-status" data-aid="' + a.id + '" style="font-size:11px;width:auto;padding:3px 7px;">'
           + '<option' + (a.status==='aktiv'?' selected':'') + ' value="aktiv">✅ Aktiv</option>'
-          + '<option' + (a.status==='pause'?' selected':'') + ' value="pause">⏸ Pause</option>'
-          + '</select>'
-          + '</div>'
+          + '<option' + (a.status!=='aktiv'?' selected':'') + ' value="pauset">⏸ Pause</option></select></div>'
           + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">'
           + '<div><label class="fgl" style="margin-bottom:3px;">Tone</label>'
-          + '<select class="fgs adm-ag-tone" data-idx="' + idx + '" style="font-size:11px;">' + tones + '</select></div>'
-          + '<div><label class="fgl" style="margin-bottom:3px;">Åpningshilsen</label>'
-          + '<input class="fgi adm-ag-greeting" data-idx="' + idx + '" value="' + (a.greeting||'').replace(/"/g,'&quot;') + '" placeholder="Hei! Takk for at du kontaktet oss." style="font-size:11px;"></div>'
-          + '</div>'
-          + '<div><label class="fgl" style="margin-bottom:3px;">📚 Agent-kunnskap <span style="font-weight:400;color:var(--mu);">(kun admin)</span></label>'
-          + '<textarea class="fgt adm-ag-know" data-idx="' + idx + '" style="height:100px;font-size:12px;width:100%;" placeholder="Produktinfo, priser, FAQ, rutiner, svarmal osv.">'
+          + '<select class="fgs adm-ag-tone" data-aid="' + a.id + '" style="font-size:11px;">' + tones + '</select></div>'
+          + '<div><label class="fgl" style="margin-bottom:3px;">Apningshilsen</label>'
+          + '<input class="fgi adm-ag-greeting" data-aid="' + a.id + '" value="' + (a.greeting||'').replace(/"/g,'&quot;') + '" placeholder="Hei! Takk for at du kontaktet oss." style="font-size:11px;"></div></div>'
+          + '<div><label class="fgl" style="margin-bottom:3px;">📚 Agent-kunnskap (kun admin)</label>'
+          + '<textarea class="fgt adm-ag-know" data-aid="' + a.id + '" style="height:100px;font-size:12px;width:100%;" placeholder="Produktinfo, priser, FAQ...">'
           + (a.knowledge||'') + '</textarea></div>'
           + '<div style="margin-top:8px;"><label class="fgl" style="margin-bottom:3px;">🔗 Webhook URL (n8n)</label>'
-          + '<input class="fgi adm-ag-webhook" data-idx="' + idx + '" value="' + (a.webhook||'') + '" placeholder="https://n8n.../webhook/..." style="font-size:11px;width:100%;font-family:monospace;"></div>'
-          + '</div>';
+          + '<input class="fgi adm-ag-webhook" data-aid="' + a.id + '" value="' + (a.webhook||'') + '" placeholder="https://n8n.../webhook/..." style="font-size:11px;width:100%;font-family:monospace;"></div></div>';
       }).join('')
-    : '<div style="color:var(--mu);font-size:12px;padding:8px 0;">Ingen agenter tilordnet ennå.</div>';
+    : '<div style="color:var(--mu);font-size:12px;padding:8px 0;">Ingen agenter tilordnet enda.</div>';
 
-  const html = `<div class="mhd">
-    <div class="mti" style="display:flex;align-items:center;gap:10px;">
-      <span style="font-size:20px;">${cl.av||'🏢'}</span>
-      <div>
-        <div>${cl.n}</div>
-        <div style="font-size:12px;font-weight:400;color:${statusColor};">${statusLabel}</div>
-      </div>
-    </div>
-    <button class="mcl mo-close">✕</button>
-  </div>
+  const html = `<div class="mhd"><div class="mti" style="display:flex;align-items:center;gap:10px;"><span style="font-size:20px;">${cl.av||'🏢'}</span><div><div>${cl.n}</div><div style="font-size:12px;font-weight:400;color:${sColor};">${sLabel}</div></div></div><button class="mcl mo-close">✕</button></div>
   <div class="mbd" style="max-height:80vh;overflow-y:auto;">
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:16px;">
       ${[['Bransje',cl.b],['Tier',tn[cl.t]||'—'],['ROI',roi+'x'],['Agenter',cl.ag||0],['Avtale/mnd',fmtKr(cl.avtale)],['Sparer/mnd',fmtKr(cl.besparing)]].map(([l,v])=>'<div style="background:var(--s3);border-radius:9px;padding:10px;"><div class="tmn" style="margin-bottom:3px;">'+l+'</div><div style="font-weight:700;font-size:13px;">'+v+'</div></div>').join('')}
     </div>
-
     <div style="display:flex;gap:8px;margin-bottom:16px;">
-      <button class="btn btn-sm" id="adm-kl-toggle" style="flex:1;background:${s==='aktiv'?'rgba(255,170,0,.12)':'rgba(0,229,160,.1)'};color:${s==='aktiv'?'var(--wa)':'var(--g)'};border:1px solid ${s==='aktiv'?'rgba(255,170,0,.3)':'rgba(0,229,160,.3)'};">
-        ${s==='aktiv' ? '⏸ Sett på pause' : '▶ Aktiver'}
-      </button>
-      <button class="btn btn-sm" id="adm-kl-archive" style="flex:1;background:rgba(100,100,120,.1);color:var(--mu);border:1px solid rgba(100,100,120,.2);">
-        📦 ${s==='arkivert' ? 'Gjenopprett' : 'Arkiver'}
-      </button>
+      <button class="btn btn-sm" id="adm-kl-toggle" style="flex:1;background:${s==='aktiv'?'rgba(255,170,0,.12)':'rgba(0,229,160,.1)'};color:${s==='aktiv'?'var(--wa)':'var(--g)'};border:1px solid ${s==='aktiv'?'rgba(255,170,0,.3)':'rgba(0,229,160,.3)'};">${s==='aktiv'?'⏸ Sett pa pause':'▶ Aktiver'}</button>
+      <button class="btn btn-sm" id="adm-kl-archive" style="flex:1;background:rgba(100,100,120,.1);color:var(--mu);border:1px solid rgba(100,100,120,.2);">📦 ${s==='arkivert'?'Gjenopprett':'Arkiver'}</button>
       <button class="btn btn-g btn-sm" id="adm-kl-save" style="flex:1;">💾 Lagre</button>
     </div>
-
     <div style="font-size:12px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">🤖 Agenter & kunnskap</div>
     <div id="adm-ag-list">${agKnowHtml}</div>
   </div>`;
 
   openDynModal('m-klient-det', html);
 
-  // Wire status toggle
-  el('adm-kl-toggle').addEventListener('click', () => {
-    cl.s = cl.s === 'aktiv' ? 'pause' : 'aktiv';
-    const isAktiv = cl.s === 'aktiv';
-    // Pause/resume all agents for this client
-    (cl.agentIdx||[]).forEach(i => { if(AGENTS[i]) AGENTS[i].status = isAktiv ? 'aktiv' : 'pause'; });
-    const btn = el('adm-kl-toggle');
-    btn.textContent = isAktiv ? '⏸ Sett på pause' : '▶ Aktiver';
-    btn.style.background = isAktiv ? 'rgba(255,170,0,.12)' : 'rgba(0,229,160,.1)';
-    btn.style.color = isAktiv ? 'var(--wa)' : 'var(--g)';
-    toast(cl.n + (isAktiv ? ' aktivert ✓' : ' satt på pause ⏸'), isAktiv ? '' : 'warn');
+  el('adm-kl-toggle').addEventListener('click', async () => {
+    const newS = cl.s === 'aktiv' ? 'pauset' : 'aktiv';
+    await sb.from('clients').update({ status: newS }).eq('id', cl.id);
+    cl.s = newS;
     renderClientsTable();
-  });
-
-  // Wire archive toggle
-  el('adm-kl-archive').addEventListener('click', () => {
-    cl.s = cl.s === 'arkivert' ? 'aktiv' : 'arkivert';
-    toast(cl.n + (cl.s === 'arkivert' ? ' arkivert 📦' : ' gjenopprettet ✓'), cl.s === 'arkivert' ? 'warn' : '');
-    renderClientsTable();
+    toast(cl.n + (newS === 'aktiv' ? ' aktivert' : ' satt pa pause'), newS === 'aktiv' ? 'ok' : 'warn');
     closeModal('m-klient-det');
   });
 
-  // Wire save (agent knowledge, tone, greeting, webhook)
-  el('adm-kl-save').addEventListener('click', () => {
-    document.querySelectorAll('.adm-ag-status').forEach(s2  => { if(AGENTS[+s2.dataset.idx])  AGENTS[+s2.dataset.idx].status   = s2.value; });
-    document.querySelectorAll('.adm-ag-tone').forEach(t    => { if(AGENTS[+t.dataset.idx])   AGENTS[+t.dataset.idx].tone      = t.value; });
-    document.querySelectorAll('.adm-ag-greeting').forEach(g => { if(AGENTS[+g.dataset.idx])  AGENTS[+g.dataset.idx].greeting  = g.value.trim(); });
-    document.querySelectorAll('.adm-ag-know').forEach(k    => { if(AGENTS[+k.dataset.idx])   AGENTS[+k.dataset.idx].knowledge = k.value.trim(); });
-    document.querySelectorAll('.adm-ag-webhook').forEach(w  => { if(AGENTS[+w.dataset.idx])  AGENTS[+w.dataset.idx].webhook   = w.value.trim(); });
-    toast('Lagret ✓');
+  el('adm-kl-archive').addEventListener('click', async () => {
+    const newS = cl.s === 'arkivert' ? 'aktiv' : 'arkivert';
+    await sb.from('clients').update({ status: newS }).eq('id', cl.id);
+    cl.s = newS;
     renderClientsTable();
+    toast(cl.n + (newS === 'arkivert' ? ' arkivert' : ' gjenopprettet'), newS === 'arkivert' ? 'warn' : 'ok');
+    closeModal('m-klient-det');
+  });
+
+  el('adm-kl-save').addEventListener('click', async () => {
+    const updates = [];
+    document.querySelectorAll('.adm-ag-status').forEach(s2 => {
+      updates.push(sb.from('agents').update({ status: s2.value }).eq('id', s2.dataset.aid));
+    });
+    document.querySelectorAll('.adm-ag-tone').forEach(t => {
+      updates.push(sb.from('agents').update({ tone: t.value }).eq('id', t.dataset.aid));
+    });
+    document.querySelectorAll('.adm-ag-greeting').forEach(g => {
+      updates.push(sb.from('agents').update({ greeting: g.value.trim() }).eq('id', g.dataset.aid));
+    });
+    document.querySelectorAll('.adm-ag-know').forEach(k => {
+      updates.push(sb.from('agents').update({ knowledge: k.value.trim() }).eq('id', k.dataset.aid));
+    });
+    document.querySelectorAll('.adm-ag-webhook').forEach(w => {
+      updates.push(sb.from('agents').update({ webhook_url: w.value.trim() }).eq('id', w.dataset.aid));
+    });
+    await Promise.all(updates);
+    await loadAdminData();
+    renderAgentCards();
+    renderClientsTable();
+    toast('Lagret');
   });
 }
 
-
 /* ── USERS TABLE ── */
-function renderUsersTable() {
-  const tb = el('usr-tbody');
-  if (!tb) return;
-  const rows = Object.entries(USERS).map(([email, u]) => {
+async function renderUsersTable() {
+  const tb = el('usr-tbody'); if (!tb) return;
+  const { data: users } = await sb.from('users').select('*').order('role');
+  if (!users?.length) {
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--mu);">Ingen brukere</td></tr>';
+    return;
+  }
+  tb.innerHTML = users.map(u => {
     const isAdmin = u.role === 'admin';
     return `<tr>
-      <td><div style="font-weight:600;">${isAdmin ? u.name : u.company || 'Ukjent'}</div><div class="tmn">${email}</div></td>
-      <td><span class="bge ${isAdmin ? 'ba' : 'bt2'}">${isAdmin ? 'SCS ADMIN' : 'KLIENT'}</span></td>
-      <td style="font-size:12px;color:${isAdmin ? 'var(--g)' : 'var(--m2)'};">${isAdmin ? 'Alt inkl. alle klienter' : 'Kun eget dashboard'}</td>
-      <td class="tmn">${isAdmin ? 'Nå' : 'i dag'}</td>
-      <td>${isAdmin ? '' : `<button class="btn btn-gh btn-sm usr-edit-btn" data-email="${email}">Rediger</button>`}</td>
+      <td><div style="font-weight:600;">${u.display_name || u.company || 'Ukjent'}</div><div class="tmn">${u.email}</div></td>
+      <td><span class="bge ${isAdmin?'ba':'bt2'}">${isAdmin?'SCS ADMIN':'KLIENT'}</span></td>
+      <td style="font-size:12px;color:${isAdmin?'var(--g)':'var(--m2)'};">${isAdmin?'Alt inkl. alle klienter':'Kun eget dashboard'}</td>
+      <td class="tmn">${u.last_login ? new Date(u.last_login).toLocaleDateString('no-NO') : '—'}</td>
+      <td></td>
     </tr>`;
-  });
-  tb.innerHTML = rows.join('');
-  tb.querySelectorAll('.usr-edit-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const u = USERS[btn.dataset.email];
-      openDynModal('m-edit-user', `<div class="mhd"><div class="mti">👤 Rediger bruker</div><button class="mcl mo-close">✕</button></div>
-        <div class="mbd">
-          <div class="fg1"><label class="fgl">Selskap</label><input class="fgi" id="eu-co" value="${u.company || ''}"></div>
-          <div class="fg1"><label class="fgl">E-post (skrivebeskyttet)</label><input class="fgi" value="${btn.dataset.email}" readonly style="background:var(--s3);color:var(--m2);"></div>
-          <div class="fg1"><label class="fgl">Nytt passord</label><input class="fgi" id="eu-pw" type="password" placeholder="La stå for å beholde"></div>
-        </div>
-        <div class="mft"><button class="btn btn-gh mo-close">Avbryt</button>
-        <button class="btn btn-g" id="eu-save">💾 Lagre</button></div>`);
-      el('eu-save').addEventListener('click', () => {
-        const newCo = el('eu-co').value.trim();
-        const newPw = el('eu-pw').value.trim();
-        if (newCo) u.company = newCo;
-        if (newPw) u.pass = newPw;
-        renderUsersTable();
-        closeModal('m-edit-user');
-        toast('Bruker oppdatert ✓');
-      });
-    });
-  });
+  }).join('');
 }
 
 /* ── AVTALER TABLE ── */
 function renderAvtaleTabell() {
-  const tb = el('av-tbody');
-  if (!tb) return;
+  const tb = el('av-tbody'); if (!tb) return;
   const tn = { 1:'⚡ Liten', 2:'🚀 Medium', 3:'🏆 Stor' };
-  const sorted = [...CLIENTS].sort((a, b) => (b.besparing || 0) - (a.besparing || 0));
+  const sorted = [...CLIENTS].sort((a, b) => (b.besparing||0) - (a.besparing||0));
+  if (!sorted.length) { tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--mu);">Ingen avtaler</td></tr>'; return; }
   tb.innerHTML = sorted.map(cl => {
-    const netto = (cl.besparing || 0) - (cl.avtale || 0);
+    const netto = (cl.besparing||0) - (cl.avtale||0);
     const roi = cl.avtale ? (cl.besparing / cl.avtale).toFixed(1) : '—';
     const rc = roi >= 4 ? 'var(--g)' : roi >= 3 ? 'var(--au)' : 'var(--m2)';
     return `<tr>
       <td><div style="font-weight:600;">${cl.n}</div><div class="tmn">${cl.b}</div></td>
-      <td><span class="bge" style="font-size:9.5px;">${tn[cl.t] || '—'}</span></td>
+      <td><span class="bge" style="font-size:9.5px;">${tn[cl.t]||'—'}</span></td>
       <td class="tmn">${cl.ag}</td>
       <td style="font-family:'DM Mono',monospace;font-weight:700;">${fmtKr(cl.avtale)}</td>
       <td style="font-family:'DM Mono',monospace;color:var(--g);font-weight:600;">${fmtKr(cl.besparing)}</td>
       <td style="font-family:'Instrument Sans',sans-serif;font-weight:700;color:${rc};">${roi}x</td>
       <td style="font-family:'DM Mono',monospace;color:var(--g);">${fmtKr(netto)}</td>
-      <td><span class="bge ${cl.s === 'aktiv' ? 'ba' : 'bp'}">${cl.s.toUpperCase()}</span></td>
+      <td><span class="bge ${cl.s==='aktiv'?'ba':'bp'}">${cl.s.toUpperCase()}</span></td>
     </tr>`;
   }).join('');
 }
 
 /* ── API KOSTNADER ── */
 function renderApiKostnader() {
-  const tb = el('api-tbody');
-  const varslerDiv = el('api-varsler');
+  const tb = el('api-tbody'), varslerDiv = el('api-varsler');
   if (!tb) return;
-  const sorted = [...CLIENTS].sort((a, b) => (b.apiKost || 0) - (a.apiKost || 0));
-  let totKost = 0, over = 0, nær = 0, varsler = [];
+  const sorted = [...CLIENTS].sort((a, b) => (b.apiKost||0) - (a.apiKost||0));
+  if (!sorted.length) { tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--mu);">Ingen data</td></tr>'; return; }
+  let totKost = 0, over = 0, naer = 0, varsler = [];
   tb.innerHTML = sorted.map(cl => {
     const kost = cl.apiKost || 0, grense = cl.apiGrense || 2000;
     const pct = Math.min(Math.round(kost / grense * 100), 100);
     const isOver = kost > grense, isWarn = !isOver && pct >= 80;
     totKost += kost;
-    if (isOver) { over++; varsler.push({ nm: cl.n, kost, grense, type: 'over' }); }
-    if (isWarn) { nær++; varsler.push({ nm: cl.n, kost, grense, type: 'warn' }); }
+    if (isOver) { over++; varsler.push({ nm:cl.n, kost, grense, type:'over' }); }
+    if (isWarn) { naer++; varsler.push({ nm:cl.n, kost, grense, type:'warn' }); }
     const bc = isOver ? 'var(--er)' : isWarn ? 'var(--wa)' : 'var(--g)';
-    const badge = isOver ? '<span class="bge be">OVER GRENSE</span>' : isWarn ? '<span class="bge bp">NÆR GRENSE</span>' : '<span class="bge ba">OK</span>';
+    const badge = isOver ? '<span class="bge be">OVER GRENSE</span>' : isWarn ? '<span class="bge bp">NAER GRENSE</span>' : '<span class="bge ba">OK</span>';
     return `<tr>
       <td><div style="font-weight:600;">${cl.n}</div><div class="tmn">${cl.b}</div></td>
       <td class="tmn">${cl.ag}</td>
-      <td style="font-family:'DM Mono',monospace;font-weight:700;color:${isOver ? 'var(--er)' : isWarn ? 'var(--wa)' : 'var(--tx)'};">${fmtKr(kost)}</td>
+      <td style="font-family:'DM Mono',monospace;font-weight:700;color:${isOver?'var(--er)':isWarn?'var(--wa)':'var(--tx)'};">${fmtKr(kost)}</td>
       <td class="tmn">${fmtKr(grense)}</td>
       <td style="min-width:110px;"><div style="display:flex;align-items:center;gap:7px;"><div class="pb" style="flex:1;"><div class="pbf" style="width:${pct}%;background:${bc};"></div></div><span style="font-family:'DM Mono',monospace;font-size:10px;color:${bc};min-width:28px;">${pct}%</span></div></td>
       <td>${badge}</td>
@@ -1891,56 +1792,43 @@ function renderApiKostnader() {
     btn.addEventListener('click', () => varsleKlient(btn.dataset.nm, parseInt(btn.dataset.kost), parseInt(btn.dataset.grense)));
   });
   const avg = sorted.length ? Math.round(totKost / sorted.length) : 0;
-  animV('api-tot',  fmtKr(totKost));
-  const overEl = el('api-over');
-  if (overEl) { overEl.textContent = over; overEl.style.color = over > 0 ? 'var(--er)' : 'var(--g)'; }
-  const warnEl = el('api-warn');
-  if (warnEl) { warnEl.textContent = nær; warnEl.style.color = nær > 0 ? 'var(--wa)' : 'var(--g)'; }
+  animV('api-tot', fmtKr(totKost));
+  const overEl = el('api-over'); if (overEl) { overEl.textContent = over; overEl.style.color = over > 0 ? 'var(--er)' : 'var(--g)'; }
+  const warnEl = el('api-warn'); if (warnEl) { warnEl.textContent = naer; warnEl.style.color = naer > 0 ? 'var(--wa)' : 'var(--g)'; }
   animV('api-avg', fmtKr(avg));
   if (varslerDiv) {
-    if (varsler.length === 0) {
-      varslerDiv.innerHTML = '<div style="font-size:12.5px;color:var(--g);padding:4px 0;">✅ Ingen aktive varsler — alle klienter innenfor grensen.</div>';
-    } else {
-      varslerDiv.innerHTML = varsler.map(v => `
-        <div style="display:flex;align-items:center;justify-content:space-between;background:${v.type === 'over' ? 'rgba(255,61,61,.06)' : 'rgba(255,170,0,.06)'};border:1px solid ${v.type === 'over' ? 'rgba(255,61,61,.2)' : 'rgba(255,170,0,.2)'};border-radius:9px;padding:12px 14px;">
-          <div><div style="font-weight:700;font-size:12.5px;">${v.nm}</div><div style="font-size:11.5px;color:var(--m2);">${v.type === 'over' ? 'Over grensen' : 'Nær grensen'}: ${fmtKr(v.kost)} / ${fmtKr(v.grense)}</div></div>
-          <button class="btn btn-${v.type === 'over' ? 'er' : 'wa'} btn-sm varsle-inline-btn" data-nm="${v.nm}" data-kost="${v.kost}" data-grense="${v.grense}">📧 Varsle klient</button>
-        </div>`).join('');
-      varslerDiv.querySelectorAll('.varsle-inline-btn').forEach(btn => {
-        btn.addEventListener('click', () => varsleKlient(btn.dataset.nm, parseInt(btn.dataset.kost), parseInt(btn.dataset.grense)));
-      });
-    }
+    if (!varsler.length) varslerDiv.innerHTML = '<div style="font-size:12.5px;color:var(--g);padding:4px 0;">✅ Ingen aktive varsler.</div>';
+    else varslerDiv.innerHTML = varsler.map(v => `<div style="display:flex;align-items:center;justify-content:space-between;background:${v.type==='over'?'rgba(255,61,61,.06)':'rgba(255,170,0,.06)'};border:1px solid ${v.type==='over'?'rgba(255,61,61,.2)':'rgba(255,170,0,.2)'};border-radius:9px;padding:12px 14px;"><div><div style="font-weight:700;font-size:12.5px;">${v.nm}</div><div style="font-size:11.5px;color:var(--m2);">${v.type==='over'?'Over grensen':'Naer grensen'}: ${fmtKr(v.kost)} / ${fmtKr(v.grense)}</div></div></div>`).join('');
   }
 }
 
 function varsleKlient(nm, kost, grense) {
   const over = kost > grense;
   const tekst = over
-    ? `Hei! Vi ser at din API-kostnad denne måneden (${fmtKr(kost)}) har overskredet grensen (${fmtKr(grense)}). Ta kontakt med oss for å diskutere tilleggskostnad.`
-    : `Hei! Din API-kostnad nærmer seg grensen. Nåværende forbruk: ${fmtKr(kost)} av ${fmtKr(grense)}.`;
+    ? `Hei! Vi ser at din API-kostnad denne maneden (${fmtKr(kost)}) har overskredet grensen (${fmtKr(grense)}).`
+    : `Hei! Din API-kostnad naermer seg grensen. Navarende forbruk: ${fmtKr(kost)} av ${fmtKr(grense)}.`;
   navigator.clipboard.writeText(tekst).catch(() => {});
-  toast('Varseltekst for ' + nm + ' kopiert ✓', over ? 'err' : 'warn');
+  toast('Varseltekst for ' + nm + ' kopiert', over ? 'err' : 'warn');
 }
 
 /* ── FAKTURERING ── */
-function renderFakturering() {
-  const tb = el('fak-tbody');
-  if (!tb) return;
-  const fakData = [
-    { n:'Tech Solutions', kr:34000, b:198000, dato:'01.02.2026', s:'ba', sl:'BETALT' },
-    { n:'Regnskap AS',    kr:11900, b:52000,  dato:'01.02.2026', s:'ba', sl:'BETALT' },
-    { n:'Juss Partners',  kr:18500, b:74000,  dato:'01.02.2026', s:'ba', sl:'BETALT' },
-    { n:'Finans Nord',    kr:22000, b:89000,  dato:'05.02.2026', s:'bp', sl:'VENTER' },
-    { n:'Eiendom Nord',   kr:8500,  b:31000,  dato:'01.02.2026', s:'ba', sl:'BETALT' },
-    { n:'Handel Butikk',  kr:7200,  b:24000,  dato:'01.02.2026', s:'ba', sl:'BETALT' },
-  ];
-  tb.innerHTML = fakData.map(f => `<tr>
-    <td style="font-weight:600;">${f.n}</td>
-    <td style="font-family:'DM Mono',monospace;font-weight:700;">${fmtKr(f.kr)}</td>
-    <td style="color:var(--g);font-family:'DM Mono',monospace;font-size:11px;">${fmtKr(f.b)}</td>
-    <td class="tmn">${f.dato}</td>
-    <td><span class="bge ${f.s}">${f.sl}</span></td>
-  </tr>`).join('');
+async function renderFakturering() {
+  const tb = el('fak-tbody'); if (!tb) return;
+  const { data: invoices } = await sb.from('invoices').select('*, clients(name)').order('created_at', { ascending: false }).limit(20);
+  if (!invoices?.length) {
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--mu);">Ingen fakturaer enda</td></tr>';
+    return;
+  }
+  tb.innerHTML = invoices.map(f => {
+    const sClass = f.status === 'betalt' ? 'ba' : f.status === 'sendt' ? 'bp' : 'bd';
+    return `<tr>
+      <td style="font-weight:600;">${f.clients?.name || '—'}</td>
+      <td style="font-family:'DM Mono',monospace;font-weight:700;">${fmtKr(f.total_kr||0)}</td>
+      <td style="color:var(--g);font-family:'DM Mono',monospace;font-size:11px;">${fmtKr(f.avtale_kr||0)}</td>
+      <td class="tmn">${f.due_date || '—'}</td>
+      <td><span class="bge ${sClass}">${(f.status||'usendt').toUpperCase()}</span></td>
+    </tr>`;
+  }).join('');
 }
 
 /* ╔═══════════════════════════════════════════════════════════════
@@ -1948,31 +1836,24 @@ function renderFakturering() {
    ╚═══════════════════════════════════════════════════════════════ */
 function pickTier(t) {
   selTier = t;
-  document.querySelectorAll('.tsel').forEach(el => {
-    const isMe = parseInt(el.dataset.t) === t;
+  document.querySelectorAll('.tsel').forEach(el2 => {
+    const isMe = parseInt(el2.dataset.t) === t;
     const tc = { 1:'var(--t1)', 2:'var(--t2)', 3:'var(--t3)' }[t];
     const te = { 1:'var(--t1e)', 2:'var(--t2e)', 3:'var(--t3e)' }[t];
     const tb2 = { 1:'var(--t1b)', 2:'var(--t2b)', 3:'var(--t3b)' }[t];
-    if (isMe) {
-      el.style.borderColor = te;
-      el.style.background = tb2;
-      el.querySelector('div').style.color = tc;
-    } else {
-      el.style.borderColor = 'var(--b2)';
-      el.style.background = 'var(--s2)';
-      el.querySelector('div').style.color = 'var(--m2)';
-    }
+    if (isMe) { el2.style.borderColor = te; el2.style.background = tb2; el2.querySelector('div').style.color = tc; }
+    else { el2.style.borderColor = 'var(--b2)'; el2.style.background = 'var(--s2)'; el2.querySelector('div').style.color = 'var(--m2)'; }
   });
 }
 
 function ncCalcRoi() {
-  const avtale    = parseInt(el('nc-avtale')?.value) || 0;
+  const avtale = parseInt(el('nc-avtale')?.value) || 0;
   const besparing = parseInt(el('nc-besparing')?.value) || 0;
-  const preview   = el('nc-roi-preview');
+  const preview = el('nc-roi-preview');
   if (!avtale || !besparing) { if (preview) preview.style.display = 'none'; return; }
-  const roi   = (besparing / avtale).toFixed(1);
+  const roi = (besparing / avtale).toFixed(1);
   const netto = besparing - avtale;
-  const pct   = Math.round(netto / besparing * 100);
+  const pct = Math.round(netto / besparing * 100);
   if (preview) preview.style.display = 'flex';
   const rv = el('nc-roi-val'), nv = el('nc-netto-val'), pv = el('nc-pct-val');
   if (rv) { rv.textContent = roi + 'x'; rv.style.color = roi >= 4 ? 'var(--g)' : roi >= 3 ? 'var(--au)' : 'var(--m2)'; }
@@ -1988,33 +1869,74 @@ function ncGenPw() {
   if (pwEl) { pwEl.value = pw; pwEl.style.color = 'var(--g)'; setTimeout(() => pwEl.style.color = '', 2000); }
 }
 
-function addClient() {
-  const nm         = el('nc-nm')?.value?.trim();
-  const cp         = el('nc-cp')?.value?.trim();
-  const email      = el('nc-em')?.value?.trim();
-  const pw         = el('nc-pw')?.value?.trim();
-  const br         = el('nc-br')?.value || 'Annen';
-  const avtaleKr   = parseInt(el('nc-avtale')?.value) || 0;
-  const besKr      = parseInt(el('nc-besparing')?.value) || 0;
-  if (!nm)              { toast('Selskapsnavn er påkrevd', 'err'); return; }
-  if (!email || !email.includes('@')) { toast('Ugyldig e-postadresse', 'err'); return; }
-  if (!avtaleKr)        { toast('Fyll inn avtalepris', 'err'); return; }
-  if (USERS[email])     { toast('E-post finnes allerede', 'err'); return; }
-
-  const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
-  let finalPw = pw;
-  if (!finalPw) { finalPw = ''; for (let i = 0; i < 12; i++) finalPw += chars[Math.floor(Math.random() * chars.length)]; }
+async function addClient() {
+  const nm = el('nc-nm')?.value?.trim();
+  const cp = el('nc-cp')?.value?.trim();
+  const email = el('nc-em')?.value?.trim();
+  const pw = el('nc-pw')?.value?.trim();
+  const br = el('nc-br')?.value || 'Annen';
+  const avtaleKr = parseInt(el('nc-avtale')?.value) || 0;
+  const besKr = parseInt(el('nc-besparing')?.value) || 0;
+  if (!nm) { toast('Selskapsnavn er pakrevd', 'err'); return; }
+  if (!avtaleKr) { toast('Fyll inn avtalepris', 'err'); return; }
 
   const tierColors = { 1:'#00e5a0', 2:'#2f8bff', 3:'#f59e0b' };
-  const tierNames  = { 1:'Liten', 2:'Medium', 3:'Stor' };
-  const icons = ['🏢','🏡','🏦','🔧','💼','🏥','📦','⚡'];
-  const icon  = icons[Math.floor(Math.random() * icons.length)];
-  const roi   = avtaleKr ? (besKr / avtaleKr).toFixed(1) : 0;
+  const tierNames = { 1:'Liten', 2:'Medium', 3:'Stor' };
   const apiGrense = Math.round(avtaleKr * 0.2);
+  const roi = avtaleKr ? (besKr / avtaleKr).toFixed(1) : 0;
 
-  CLIENTS.push({ n:nm, b:br, t:selTier, ag:0, act:0, avtale:avtaleKr, besparing:besKr, roi:parseFloat(roi), apiKost:0, apiGrense, s:'aktiv', av:nm[0].toUpperCase(), c:tierColors[selTier] });
-  USERS[email] = { pass:finalPw, role:'client', company:nm, tier:selTier, icon, color:tierColors[selTier], agentIdx:[], stats:{ actions:0, leads:0, voices:0 }, avtaleKr, besparingKr:besKr, timeSaved:Math.round(besKr/600), apiKostKr:0, apiGrenseKr:apiGrense, contact:cp || nm };
+  const btn = el('btn-add-client');
+  btn.textContent = '⏳ Oppretter...'; btn.disabled = true;
 
+  // 1. Create client
+  const { data: client, error: clientErr } = await sb.from('clients').insert({
+    name: nm, bransje: br, tier_id: selTier,
+    contact_name: cp || '', contact_email: email || '',
+    avtale_kr: avtaleKr, besparing_kr: besKr,
+    avatar_letter: nm[0].toUpperCase(), avatar_color: tierColors[selTier],
+    api_grense_kr: apiGrense,
+  }).select().single();
+
+  if (clientErr) {
+    toast('Feil: ' + clientErr.message, 'err');
+    btn.textContent = '✅ Opprett klient og bruker'; btn.disabled = false;
+    return;
+  }
+
+  // 2. Create auth user + profile (if email provided)
+  let finalPw = pw;
+  if (!finalPw) { const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789'; finalPw = ''; for (let i = 0; i < 12; i++) finalPw += chars[Math.floor(Math.random() * chars.length)]; }
+
+  if (email && email.includes('@')) {
+    // Save admin session
+    const { data: { session: adminSession } } = await sb.auth.getSession();
+
+    const { data: signUpData, error: signUpErr } = await sb.auth.signUp({
+      email, password: finalPw,
+      options: { emailRedirectTo: window.location.origin }
+    });
+
+    // Restore admin session
+    if (adminSession) await sb.auth.setSession(adminSession);
+
+    if (signUpErr) {
+      toast('Klient opprettet, men brukerkonto feilet: ' + signUpErr.message, 'warn');
+    } else if (signUpData?.user) {
+      const { data: userProfile } = await sb.from('users').insert({
+        auth_id: signUpData.user.id, email,
+        role: 'client', display_name: cp || nm, company: nm,
+      }).select().single();
+
+      if (userProfile) {
+        await sb.from('client_users').insert({
+          client_id: client.id, user_id: userProfile.id, is_primary: true,
+        });
+      }
+    }
+  }
+
+  // 3. Refresh data
+  await loadAdminData();
   renderClientsTable();
   renderUsersTable();
   updateAdminStats();
@@ -2022,13 +1944,14 @@ function addClient() {
 
   // Reset form
   ['nc-nm','nc-cp','nc-em','nc-pw','nc-avtale','nc-besparing'].forEach(id => { const e = el(id); if (e) e.value = ''; });
-  const prev = el('nc-roi-preview');
-  if (prev) prev.style.display = 'none';
+  const prev = el('nc-roi-preview'); if (prev) prev.style.display = 'none';
+
+  btn.textContent = '✅ Opprett klient og bruker'; btn.disabled = false;
 
   // Fill done modal
-  el('cl-done-nm').textContent = icon + ' ' + nm;
-  el('cl-done-em').textContent = email;
-  el('cl-done-pw').textContent = finalPw;
+  el('cl-done-nm').textContent = nm;
+  el('cl-done-em').textContent = email || '(ingen e-post)';
+  el('cl-done-pw').textContent = email ? finalPw : '—';
   el('cl-done-tier').textContent = tierNames[selTier] + ' · Avtale: ' + fmtKr(avtaleKr) + (besKr ? ' · ROI: ' + roi + 'x' : '');
   el('cl-done-tier').style.color = tierColors[selTier];
   _lastClient = { nm, email, pw: finalPw, tier: selTier, tierName: tierNames[selTier], contact: cp, avtaleKr, besKr, roi };
@@ -2038,41 +1961,87 @@ function addClient() {
 /* ╔═══════════════════════════════════════════════════════════════
    ║  CLIENT BOOT
    ╚═══════════════════════════════════════════════════════════════ */
-function bootClient() {
+async function bootClient() {
+  // Get client membership
+  const { data: memberships } = await sb.from('client_users').select('client_id').eq('user_id', CU.id);
+  if (!memberships?.length) { toast('Ingen klient tilknyttet din konto', 'err'); return; }
+
+  const clientId = memberships[0].client_id;
+  const { data: client } = await sb.from('clients').select('*').eq('id', clientId).single();
+  if (!client) { toast('Klientdata ikke funnet', 'err'); return; }
+
+  const { data: agents } = await sb.from('agents').select('*').eq('client_id', clientId);
+  const mappedAgents = (agents || []).map(a => mapAgent({ ...a, client_name: client.name }));
+
+  const { data: apiKeys } = await sb.from('client_api_keys').select('*').eq('client_id', clientId);
+  const keys = {};
+  (apiKeys || []).forEach(k => { keys[k.key_type] = k.key_value; });
+
+  const totalActions = mappedAgents.reduce((s, a) => s + a.act, 0);
+  const tierIcons = { 1:'🏢', 2:'🚀', 3:'🏆' };
+
+  // Populate CU with expected fields
+  CU.company = client.name;
+  CU.tier = client.tier_id;
+  CU.icon = tierIcons[client.tier_id] || '🏢';
+  CU.color = client.avatar_color || '#2f8bff';
+  CU.clientId = clientId;
+  CU.stats = { actions: totalActions, leads: 0, voices: 0 };
+  CU.avtaleKr = client.avtale_kr || 0;
+  CU.besparingKr = client.besparing_kr || 0;
+  CU.timeSaved = Math.round((client.besparing_kr || 0) / 600);
+  CU.apiKostKr = parseFloat(client.api_kost_kr) || 0;
+  CU.apiGrenseKr = parseFloat(client.api_grense_kr) || 0;
+  CU.contact = client.contact_name || '';
+  CU.generalKnowledge = client.general_knowledge || '';
+  CU.voiceProvider = client.voice_provider || 'VAPI';
+  CU.keyOpenAI = keys.openai || '';
+  CU.keyVapi = keys.vapi || '';
+  CU.keyElevenLabs = keys.elevenlabs || '';
+  CU.keyTwilioSid = keys.twilio_sid || '';
+  CU.keyTwilioToken = keys.twilio_token || '';
+  CU.keyHubspot = keys.hubspot || '';
+  CU.n8nUrl = client.n8n_url || '';
+  CU.webhookUrl = client.webhook_url || '';
+
+  // Set AGENTS to this client's agents
+  AGENTS = mappedAgents;
+  CU.agentIdx = AGENTS.map((_, i) => i);
+
   const u = CU;
   const tc = TIER_CFG[u.tier];
-  const agentCount = (u.agentIdx||[]).length;
+  const agentCount = AGENTS.length;
   const isMaxed = agentCount >= tc.max;
-  const isWarn  = !isMaxed && (agentCount / tc.max) >= 0.8;
+  const isWarn = !isMaxed && (agentCount / tc.max) >= 0.8;
 
   // Topbar
-  el('c-icon').textContent  = u.icon;
-  el('c-name').textContent  = u.company;
-  el('c-av').textContent    = u.company[0];
+  el('c-icon').textContent = u.icon;
+  el('c-name').textContent = u.company;
+  el('c-av').textContent = u.company[0];
   el('c-tbadge').textContent = u.icon;
   el('c-tbadge').style.background = u.tier === 1 ? 'rgba(0,229,160,0.15)' : u.tier === 2 ? 'rgba(47,139,255,0.15)' : 'rgba(245,158,11,0.15)';
   el('c-greet').textContent = u.company;
 
   // Capacity banners
   el('c-tier-alert').style.display = 'none';
-  el('c-tier-warn').style.display  = 'none';
-  el('c-ag-alert').style.display   = 'none';
+  el('c-tier-warn').style.display = 'none';
+  el('c-ag-alert').style.display = 'none';
   if (isMaxed) {
-    const desc = `Du bruker alle ${tc.max} agenter. Kontakt SCS for å utvide avtalen.`;
-    el('c-alert-desc').textContent    = desc;
+    const desc = `Du bruker alle ${tc.max} agenter. Kontakt SCS for a utvide avtalen.`;
+    el('c-alert-desc').textContent = desc;
     el('c-ag-alert-desc').textContent = desc;
-    el('c-tier-alert').style.display  = 'flex';
-    el('c-ag-alert').style.display    = 'flex';
+    el('c-tier-alert').style.display = 'flex';
+    el('c-ag-alert').style.display = 'flex';
   } else if (isWarn) {
-    el('c-warn-desc').textContent    = `Du bruker ${agentCount} av ${tc.max} agenter (${Math.round(agentCount/tc.max*100)}%). Ta kontakt med SCS om du trenger mer kapasitet.`;
-    el('c-tier-warn').style.display  = 'flex';
+    el('c-warn-desc').textContent = `Du bruker ${agentCount} av ${tc.max} agenter (${Math.round(agentCount/tc.max*100)}%).`;
+    el('c-tier-warn').style.display = 'flex';
   }
 
   const supUp = el('c-sup-upgrade');
   if (supUp) supUp.style.display = isMaxed ? 'block' : 'none';
 
   // Settings
-  const setEm = el('c-set-em'); if (setEm) setEm.value = u.email;
+  const setEm = el('c-set-em'); if (setEm) setEm.value = CU.email;
   const setCo = el('c-set-co'); if (setCo) setCo.value = u.company;
   const setCp = el('c-set-cp'); if (setCp) setCp.value = u.contact || '';
 
@@ -2082,110 +2051,76 @@ function bootClient() {
   renderClientActLog();
   buildClientCharts();
 
-  // API cost
   const apiKostEl = el('c-api-kost');
   if (apiKostEl) apiKostEl.textContent = fmtKr(u.apiKostKr || 0);
 
-
-  // Voice provider display & key fields
-  const cl = CLIENTS.find(c => c.n === u.company);
-  const vp = cl?.voiceProvider || u.voiceProvider || 'VAPI';
+  // Voice provider
+  const cl = client;
+  const vp = cl.voice_provider || 'VAPI';
   const vpInfo = {
-    'VAPI':       { name:'📞 VAPI',            desc:'Alt-i-ett voice AI-platform. Enkel oppsett, betaler per minutt.' },
-    'ElevenLabs': { name:'🎙 ElevenLabs + VAPI', desc:'Naturlig norsk tale via ElevenLabs, samtalelogikk via VAPI.' },
-    'Twilio':     { name:'📞 Twilio',           desc:'Telefoni via Twilio med norsk nummer. Rimeligere per samtale.' },
+    'VAPI': { name:'📞 VAPI', desc:'Alt-i-ett voice AI-platform.' },
+    'ElevenLabs': { name:'🎙 ElevenLabs + VAPI', desc:'Naturlig norsk tale via ElevenLabs.' },
+    'Twilio': { name:'📞 Twilio', desc:'Telefoni via Twilio med norsk nummer.' },
   };
   const vpi = vpInfo[vp] || vpInfo['VAPI'];
-  const nmEl = el('c-voice-provider-name'), dscEl = el('c-voice-provider-desc');
-  if (nmEl) nmEl.textContent = vpi.name;
+  const nmEl2 = el('c-voice-provider-name'), dscEl = el('c-voice-provider-desc');
+  if (nmEl2) nmEl2.textContent = vpi.name;
   if (dscEl) dscEl.textContent = vpi.desc;
+
   const kf = el('c-voice-key-fields');
   if (kf) {
     if (vp === 'ElevenLabs') {
-      kf.innerHTML = '<div style="margin-bottom:8px;"><label class="fgl">ElevenLabs API Key</label>'
-        + '<div style="display:flex;gap:7px;"><input class="fgi" id="c-key-elevenlabs" placeholder="el_..." style="flex:1;font-family:monospace;font-size:11px;">'
-        + '<a href="https://elevenlabs.io/app" target="_blank" class="btn btn-gh btn-sm">↗</a></div>'
-        + '<div style="font-size:11px;color:var(--mu);margin-top:4px;">VAPI håndteres av SCS.</div></div>'
-        + '<input type="hidden" id="c-key-vapi" value="">'
-        + '<input type="hidden" id="c-key-twilio-sid" value="">'
-        + '<input type="hidden" id="c-key-twilio-token" value="">';
+      kf.innerHTML = '<div style="margin-bottom:8px;"><label class="fgl">ElevenLabs API Key</label><div style="display:flex;gap:7px;"><input class="fgi" id="c-key-elevenlabs" placeholder="el_..." style="flex:1;font-family:monospace;font-size:11px;"><a href="https://elevenlabs.io/app" target="_blank" class="btn btn-gh btn-sm">↗</a></div></div><input type="hidden" id="c-key-vapi" value=""><input type="hidden" id="c-key-twilio-sid" value=""><input type="hidden" id="c-key-twilio-token" value="">';
     } else if (vp === 'Twilio') {
-      kf.innerHTML = '<div style="margin-bottom:8px;"><label class="fgl">Twilio Account SID</label>'
-        + '<div style="display:flex;gap:7px;"><input class="fgi" id="c-key-twilio-sid" placeholder="AC..." style="flex:1;font-family:monospace;font-size:11px;">'
-        + '<a href="https://console.twilio.com" target="_blank" class="btn btn-gh btn-sm">↗</a></div></div>'
-        + '<div><label class="fgl">Twilio Auth Token</label>'
-        + '<input class="fgi" id="c-key-twilio-token" placeholder="Auth Token..." style="width:100%;font-family:monospace;font-size:11px;"></div>'
-        + '<input type="hidden" id="c-key-vapi" value="">'
-        + '<input type="hidden" id="c-key-elevenlabs" value="">';
+      kf.innerHTML = '<div style="margin-bottom:8px;"><label class="fgl">Twilio Account SID</label><div style="display:flex;gap:7px;"><input class="fgi" id="c-key-twilio-sid" placeholder="AC..." style="flex:1;font-family:monospace;font-size:11px;"><a href="https://console.twilio.com" target="_blank" class="btn btn-gh btn-sm">↗</a></div></div><div><label class="fgl">Twilio Auth Token</label><input class="fgi" id="c-key-twilio-token" placeholder="Auth Token..." style="width:100%;font-family:monospace;font-size:11px;"></div><input type="hidden" id="c-key-vapi" value=""><input type="hidden" id="c-key-elevenlabs" value="">';
     } else {
-      kf.innerHTML = '<div><label class="fgl">VAPI API Key</label>'
-        + '<div style="display:flex;gap:7px;"><input class="fgi" id="c-key-vapi" placeholder="vapi_..." style="flex:1;font-family:monospace;font-size:11px;">'
-        + '<a href="https://vapi.ai/dashboard" target="_blank" class="btn btn-gh btn-sm">↗</a></div>'
-        + '<div style="font-size:11px;color:var(--mu);margin-top:4px;">Brukes av voice-agentene for samtaler.</div></div>'
-        + '<input type="hidden" id="c-key-elevenlabs" value="">'
-        + '<input type="hidden" id="c-key-twilio-sid" value="">'
-        + '<input type="hidden" id="c-key-twilio-token" value="">';
+      kf.innerHTML = '<div><label class="fgl">VAPI API Key</label><div style="display:flex;gap:7px;"><input class="fgi" id="c-key-vapi" placeholder="vapi_..." style="flex:1;font-family:monospace;font-size:11px;"><a href="https://vapi.ai/dashboard" target="_blank" class="btn btn-gh btn-sm">↗</a></div></div><input type="hidden" id="c-key-elevenlabs" value=""><input type="hidden" id="c-key-twilio-sid" value=""><input type="hidden" id="c-key-twilio-token" value="">';
     }
-    if (el('c-key-openai'))       el('c-key-openai').value       = u.keyOpenAI       || '';
-    if (el('c-key-vapi'))         el('c-key-vapi').value         = u.keyVapi         || '';
-    if (el('c-key-elevenlabs'))   el('c-key-elevenlabs').value   = u.keyElevenLabs   || '';
-    if (el('c-key-twilio-sid'))   el('c-key-twilio-sid').value   = u.keyTwilioSid    || '';
-    if (el('c-key-twilio-token')) el('c-key-twilio-token').value = u.keyTwilioToken  || '';
-    if (el('c-key-hubspot'))      el('c-key-hubspot').value      = u.keyHubspot      || '';
-    if (el('c-n8n-url'))          el('c-n8n-url').value          = u.n8nUrl          || '';
-    if (el('c-webhook-url'))      el('c-webhook-url').value      = u.webhookUrl      || '';
+    if (el('c-key-openai'))       el('c-key-openai').value       = u.keyOpenAI || '';
+    if (el('c-key-vapi'))         el('c-key-vapi').value         = u.keyVapi || '';
+    if (el('c-key-elevenlabs'))   el('c-key-elevenlabs').value   = u.keyElevenLabs || '';
+    if (el('c-key-twilio-sid'))   el('c-key-twilio-sid').value   = u.keyTwilioSid || '';
+    if (el('c-key-twilio-token')) el('c-key-twilio-token').value = u.keyTwilioToken || '';
+    if (el('c-key-hubspot'))      el('c-key-hubspot').value      = u.keyHubspot || '';
+    if (el('c-n8n-url'))          el('c-n8n-url').value          = u.n8nUrl || '';
+    if (el('c-webhook-url'))      el('c-webhook-url').value      = u.webhookUrl || '';
   }
   setTimeout(renderClientAgentConfig, 100);
-
-  // Realtime
-  clearAllRT();
-  rtC = setInterval(() => {
-    u.stats.actions += Math.floor(Math.random() * 3);
-    if (Math.random() > 0.85) u.stats.leads++;
-    el('c-s-act').textContent   = u.stats.actions.toLocaleString('no-NO');
-    el('c-s-leads').textContent = u.stats.leads;
-    if (Math.random() > 0.7) pushClientFeed();
-    updateClientROI();
-  }, 8000);
 }
 
 function updateClientROI() {
-  const u = CU;
-  if (!u) return;
+  const u = CU; if (!u) return;
   const netto = u.besparingKr - u.avtaleKr;
-  const roi   = (u.besparingKr / u.avtaleKr).toFixed(1);
-  const pct   = Math.round(netto / u.besparingKr * 100);
+  const roi = u.avtaleKr ? (u.besparingKr / u.avtaleKr).toFixed(1) : '0';
+  const pct = u.besparingKr ? Math.round(netto / u.besparingKr * 100) : 0;
 
   el('c-hero-besparing').textContent = fmtKr(u.besparingKr);
-  el('c-hero-avtale').textContent    = fmtKr(u.avtaleKr);
-  el('c-hero-netto').textContent     = fmtKr(netto);
-  el('c-hero-roi').textContent       = 'ROI: ' + roi + 'x';
-  el('c-roi-h').textContent  = u.timeSaved + 't';
-  el('c-roi-s').textContent  = fmtKr(u.besparingKr);
+  el('c-hero-avtale').textContent = fmtKr(u.avtaleKr);
+  el('c-hero-netto').textContent = fmtKr(netto);
+  el('c-hero-roi').textContent = 'ROI: ' + roi + 'x';
+  el('c-roi-h').textContent = u.timeSaved + 't';
+  el('c-roi-s').textContent = fmtKr(u.besparingKr);
   el('c-plan-cost').textContent = fmtKr(u.avtaleKr);
-  el('c-roi-n').textContent  = fmtKr(netto);
-  el('c-roi-x').textContent  = roi + 'x';
+  el('c-roi-n').textContent = fmtKr(netto);
+  el('c-roi-x').textContent = roi + 'x';
   el('c-roi-pct').textContent = ' · du beholder ' + pct + '% av besparelsen';
-  el('c-s-ag').textContent   = u.agentIdx.length;
-  el('c-s-act').textContent  = (u.stats.actions || 0).toLocaleString('no-NO');
+  el('c-s-ag').textContent = AGENTS.length;
+  el('c-s-act').textContent = (u.stats.actions || 0).toLocaleString('no-NO');
   el('c-s-leads').textContent = u.stats.leads || 0;
-  el('c-s-tid').textContent  = u.timeSaved + 't';
+  el('c-s-tid').textContent = u.timeSaved + 't';
 }
 
 function buildClientCharts() {
   const u = CU;
-  const actVals = Array.from({ length: 7 }, () => Math.floor((u.stats.actions || 100) * (0.6 + Math.random() * 0.8) / 7));
-  buildChart('c-chart1', 'var(--b1)', actVals);
+  const actVals = AGENTS.map(a => a.act || 0);
+  buildChart('c-chart1', 'var(--b1)', actVals.length ? actVals : [0]);
   el('c-ch1-val').textContent = (u.stats.actions || 0).toLocaleString('no-NO');
 }
 
 function renderClientAgList() {
-  const list = el('c-aglist');
-  if (!list) return;
-  const u = CU;
-  list.innerHTML = u.agentIdx.map(idx => {
-    const a = AGENTS[idx];
-    if (!a) return '';
+  const list = el('c-aglist'); if (!list) return;
+  if (!AGENTS.length) { list.innerHTML = '<div style="padding:16px;color:var(--mu);font-size:12.5px;text-align:center;">Ingen agenter enda. SCS setter dem opp for deg!</div>'; return; }
+  list.innerHTML = AGENTS.map(a => {
     const rc = a.rate >= 90 ? 'var(--g)' : a.rate >= 80 ? 'var(--o)' : 'var(--er)';
     return `<div style="display:flex;align-items:center;gap:11px;padding:11px 16px;border-bottom:1px solid rgba(47,139,255,.06);">
       <div style="width:30px;height:30px;border-radius:8px;background:${a.bg};display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">${a.em}</div>
@@ -2197,12 +2132,9 @@ function renderClientAgList() {
 }
 
 function renderClientAgCards() {
-  const g = el('c-agcards');
-  if (!g) return;
-  const u = CU;
-  g.innerHTML = u.agentIdx.map(idx => {
-    const a = AGENTS[idx];
-    if (!a) return '';
+  const g = el('c-agcards'); if (!g) return;
+  if (!AGENTS.length) { g.innerHTML = '<div class="ccard" style="padding:30px;text-align:center;grid-column:1/-1;"><div style="font-size:28px;margin-bottom:8px;">🤖</div><div style="color:var(--mu);font-size:13px;">Ingen agenter enda.</div></div>'; return; }
+  g.innerHTML = AGENTS.map(a => {
     const rc = a.rate >= 90 ? 'var(--g)' : a.rate >= 80 ? 'var(--o)' : 'var(--er)';
     return `<div class="ccard" style="padding:17px;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
@@ -2219,36 +2151,26 @@ function renderClientAgCards() {
 }
 
 function renderClientActLog() {
-  const log = el('c-actlog');
-  if (!log) return;
+  const log = el('c-actlog'); if (!log) return;
   log.innerHTML = '';
-  for (let i = 0; i < 8; i++) pushClientFeedTo(log, false);
-
-  const cfeed = el('c-feed');
-  if (!cfeed) return;
+  if (AGENTS.length) for (let i = 0; i < 8; i++) pushClientFeedTo(log, false);
+  else log.innerHTML = '<div style="padding:16px;color:var(--mu);font-size:12.5px;text-align:center;">Ingen aktivitet enda.</div>';
+  const cfeed = el('c-feed'); if (!cfeed) return;
   cfeed.innerHTML = '';
-  for (let i = 0; i < 5; i++) pushClientFeedTo(cfeed, false, true);
-}
-
-function pushClientFeed() {
-  const cfeed = el('c-feed');
-  if (cfeed) pushClientFeedTo(cfeed, true, true);
-  const clog = el('c-actlog');
-  if (clog) pushClientFeedTo(clog, true, false);
+  if (AGENTS.length) for (let i = 0; i < 5; i++) pushClientFeedTo(cfeed, false, true);
 }
 
 function pushClientFeedTo(container, flash = true, mini = false) {
   const t = ACT_T[Math.floor(Math.random() * ACT_T.length)];
   const now = new Date().toLocaleTimeString('no-NO');
-  const u = CU;
-  const a = u?.agentIdx?.length ? AGENTS[u.agentIdx[Math.floor(Math.random() * u.agentIdx.length)]] : AGENTS[0];
+  const a = AGENTS.length ? AGENTS[Math.floor(Math.random() * AGENTS.length)] : { nm: '—' };
   const d = document.createElement('div');
   if (mini) {
     d.className = 'ti' + (flash ? ' fnb' : '');
-    d.innerHTML = `<span class="tibg tiau">${t.ic}</span><div style="flex:1;"><div style="font-size:12px;font-weight:500;">${t.msg(a?.nm || '')}</div><div class="tmn" style="margin-top:1px;">${now} · ${a?.nm || ''}</div></div>`;
+    d.innerHTML = `<span class="tibg tiau">${t.ic}</span><div style="flex:1;"><div style="font-size:12px;font-weight:500;">${t.msg(a.nm)}</div><div class="tmn" style="margin-top:1px;">${now} · ${a.nm}</div></div>`;
   } else {
     d.className = 'ai' + (flash ? ' fnb' : '');
-    d.innerHTML = `<div class="aic" style="background:${t.bg}">${t.ic}</div><div><div style="font-size:12px;">${t.msg(a?.nm || '')}</div><div class="tmn" style="margin-top:1px;">${now} · ${a?.nm || ''}</div></div>`;
+    d.innerHTML = `<div class="aic" style="background:${t.bg}">${t.ic}</div><div><div style="font-size:12px;">${t.msg(a.nm)}</div><div class="tmn" style="margin-top:1px;">${now} · ${a.nm}</div></div>`;
   }
   container.insertBefore(d, container.firstChild);
   while (container.children.length > (mini ? 5 : 8)) container.removeChild(container.lastChild);
@@ -2261,9 +2183,8 @@ function openDynModal(id, html) {
   let mo = el(id);
   if (!mo) {
     mo = document.createElement('div');
-    mo.className = 'mo';
-    mo.id = id;
-    mo.innerHTML = '<div class="mbox"></div>';
+    mo.className = 'mo'; mo.id = id;
+    mo.innerHTML = '<div class="mbox" style="width:min(560px,94vw);"></div>';
     document.body.appendChild(mo);
     mo.addEventListener('click', e => { if (e.target === mo) mo.classList.remove('on'); });
   }
@@ -2278,40 +2199,115 @@ function openDynModal(id, html) {
 function loadSavedConfig() {
   try {
     const saved = JSON.parse(localStorage.getItem('scs_sb') || '{}');
-    if (saved.url) { SB_CONFIG.url = saved.url; const e = el('sb-url'); if (e) e.value = saved.url; }
-    if (saved.key) { SB_CONFIG.anonKey = saved.key; const e = el('sb-key'); if (e) e.value = saved.key; }
+    if (saved.url) { const e2 = el('sb-url'); if (e2) e2.value = saved.url; }
+    if (saved.key) { const e2 = el('sb-key'); if (e2) e2.value = saved.key; }
   } catch {}
 }
-function updateSBConfig() {
-  const urlEl = el('sb-url'), keyEl = el('sb-key');
-  SB_CONFIG.url = urlEl?.value?.trim() || '';
-  SB_CONFIG.anonKey = keyEl?.value?.trim() || '';
-}
+
 function saveSettings() {
-  updateSBConfig();
-  try { localStorage.setItem('scs_sb', JSON.stringify({ url: SB_CONFIG.url, key: SB_CONFIG.anonKey })); } catch {}
-  toast('Innstillinger lagret ✓');
+  const url = el('sb-url')?.value?.trim() || '';
+  const key = el('sb-key')?.value?.trim() || '';
+  try { localStorage.setItem('scs_sb', JSON.stringify({ url, key })); } catch {}
+  if (url && key) { initSupabase(); }
+  toast('Innstillinger lagret. Last siden pa nytt for a aktivere.');
 }
+
 async function testSupabase() {
   const msg = el('sb-test-msg'), badge = el('set-conn-badge');
-  updateSBConfig();
-  if (!SB._enabled()) { if (msg) { msg.textContent = '⚠️ Fyll inn URL og Key først'; msg.style.color = 'var(--wa)'; } return; }
+  const url = el('sb-url')?.value?.trim();
+  const key = el('sb-key')?.value?.trim();
+  if (!url || !key) { if (msg) { msg.textContent = '⚠️ Fyll inn URL og Key forst'; msg.style.color = 'var(--wa)'; } return; }
   if (msg) { msg.textContent = '⏳ Tester...'; msg.style.color = 'var(--mu)'; }
-  const result = await SB.select('agent_actions', { limit: 1 });
-  if (result !== null) {
+  try {
+    const testSb = window.supabase.createClient(url, key);
+    const { data, error } = await testSb.from('tiers').select('*').limit(1);
+    if (error) throw error;
     if (msg) { msg.textContent = '✅ Tilkoblet!'; msg.style.color = 'var(--g)'; }
     if (badge) badge.innerHTML = '<span class="bge ba"><span class="ld"></span> Tilkoblet</span>';
-    setConnBadge(true); fetchLiveData();
-  } else {
-    if (msg) { msg.textContent = '❌ Feil — sjekk URL og Key'; msg.style.color = 'var(--er)'; }
+  } catch (e) {
+    if (msg) { msg.textContent = '❌ Feil: ' + (e.message || 'Ukjent'); msg.style.color = 'var(--er)'; }
   }
 }
 
 /* ╔═══════════════════════════════════════════════════════════════
-   ║  EVENT LISTENERS — alle samlet her, ingen inline onclick
+   ║  CLIENT AGENT CONFIG
+   ╚═══════════════════════════════════════════════════════════════ */
+function renderClientAgentConfig() {
+  const u = CU;
+  const container = el('c-agent-config-list');
+  if (!container || !u) return;
+
+  let out = '<div style="background:rgba(0,229,160,.04);border:1px solid rgba(0,229,160,.15);border-radius:11px;padding:14px;margin-bottom:2px;">'
+    + '<div style="font-size:11.5px;color:var(--m2);margin-bottom:10px;">'
+    + (AGENTS.length
+        ? '<span style="font-weight:700;color:var(--g);">📚 Generell kunnskap</span> — deles med alle agentene dine.'
+        : '<span style="font-weight:700;color:var(--g);">ℹ️ SCS setter opp agentene dine.</span> Du kan allerede legge inn informasjon.')
+    + '</div>'
+    + '<div class="fg1"><textarea class="fgt" id="cl-general-knowledge" style="height:100px;font-size:12px;" placeholder="Produktinfo, priser, FAQ, rutiner...">'
+    + (u.generalKnowledge||'') + '</textarea></div>'
+    + '<button class="btn btn-g btn-sm" id="cl-save-general-know" style="margin-top:8px;width:100%;">💾 Lagre kunnskap</button>'
+    + '</div>';
+
+  AGENTS.forEach(a => {
+    out += '<div style="border:1px solid var(--b2);border-radius:11px;padding:14px;background:var(--s3);">'
+      + '<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px;">'
+      + '<div style="width:34px;height:34px;border-radius:8px;background:' + a.bg + ';display:flex;align-items:center;justify-content:center;font-size:15px;">' + (a.em||'🤖') + '</div>'
+      + '<div style="flex:1;"><div style="font-weight:700;font-size:13px;">' + a.nm + '</div><div style="font-size:11px;color:var(--m2);">' + (a.ch||'—') + '</div></div>'
+      + '<span class="bge ' + (a.status==='aktiv'?'ba':'bp') + '" style="font-size:9px;">' + (a.status||'aktiv').toUpperCase() + '</span></div>'
+      + (a.knowledge ? '<div style="background:var(--bg);border:1px solid rgba(0,229,160,.2);border-radius:8px;padding:9px 12px;margin-bottom:10px;"><div style="font-size:10px;font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Aktiv kunnskap fra SCS</div><div style="font-size:12px;color:var(--m2);white-space:pre-wrap;max-height:70px;overflow-y:auto;">' + a.knowledge + '</div></div>' : '')
+      + '<div class="fg1" style="margin-bottom:8px;"><label class="fgl">📝 Din tilleggskunnskap for ' + a.nm + '</label>'
+      + '<textarea class="fgt cl-ag-knowledge" data-aid="' + a.id + '" style="height:75px;font-size:12px;" placeholder="Spesifikk info, rutiner, instrukser...">' + (a.clientKnowledge||'') + '</textarea></div>'
+      + '<div class="fg1" style="margin-bottom:8px;"><label class="fgl">💬 Innspill til SCS</label>'
+      + '<textarea class="fgt cl-ag-feedback" data-aid="' + a.id + '" style="height:50px;font-size:12px;" placeholder="F.eks.: Agenten bor nevne ny pakke.">' + (a.clientFeedback||'') + '</textarea></div>'
+      + '<button class="btn btn-g btn-sm cl-ag-save" data-aid="' + a.id + '" style="width:100%;">💾 Lagre</button></div>';
+  });
+
+  container.innerHTML = out;
+
+  const gBtn = el('cl-save-general-know');
+  if (gBtn) gBtn.addEventListener('click', async () => {
+    const val = (el('cl-general-knowledge')||{}).value || '';
+    await sb.from('clients').update({ general_knowledge: val }).eq('id', CU.clientId);
+    CU.generalKnowledge = val;
+    toast('Kunnskap lagret');
+  });
+
+  container.querySelectorAll('.cl-ag-save').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const aid = btn.dataset.aid;
+      const card = btn.closest('div[style*="border:1px solid var(--b2)"]');
+      if (!card) return;
+      const kt = card.querySelector('.cl-ag-knowledge');
+      const ft = card.querySelector('.cl-ag-feedback');
+      const updates = {};
+      if (kt) updates.client_knowledge = kt.value.trim();
+      if (ft) updates.client_feedback = ft.value.trim();
+      await sb.from('agents').update(updates).eq('id', aid);
+      toast('Lagret');
+    });
+  });
+}
+
+/* ╔═══════════════════════════════════════════════════════════════
+   ║  EVENT LISTENERS
    ╚═══════════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
   loadSavedConfig();
+
+  // Check for existing session
+  if (sb) {
+    sb.auth.getSession().then(async ({ data: { session } }) => {
+      if (session) {
+        const { data: profile } = await sb.from('users').select('*').eq('auth_id', session.user.id).single();
+        if (profile) {
+          CU = profile;
+          el('v-login').classList.remove('on');
+          if (CU.role === 'admin') { el('v-admin').classList.add('on'); await bootAdmin(); }
+          else { el('v-client').classList.add('on'); await bootClient(); }
+        }
+      }
+    });
+  }
 
   /* ── Login ── */
   el('rtab-admin').addEventListener('click', () => {
@@ -2334,64 +2330,63 @@ document.addEventListener('DOMContentLoaded', () => {
     el('lerr').classList.remove('on');
   });
   el('lbtn').addEventListener('click', doLogin);
-  el('lin-em').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); else if(e.key && e.key.length===1) DEMO_MODE=false; });
+  el('lin-em').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
   el('lin-pw').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
-  /* Demo hints */
-  const demoMap = {
-    admin: [atob('YWRtaW5Ac2ltcGx5Y29tcGxleC5ubw=='), 'admin123', 'admin'],
-    c1:    [atob('a3VuZGVAcmVnbnNrYXBjbGllbnQubm8='), 'klient123', 'client'],
-    c2:    [atob('a29udGFrdEBlaWVuZG9tbm9yZC5ubw=='), 'klient123', 'client'],
-    c3:    [atob('YWRtaW5AdGVjaHNvbHV0aW9ucy5ubw=='), 'klient123', 'client'],
-  };
-  document.querySelectorAll('.hint[data-demo]').forEach(hint => {
-    hint.addEventListener('click', () => {
-      const d = demoMap[hint.dataset.demo];
-      if (!d) return;
-      DEMO_MODE = true;
-      el('lin-em').value = d[0];
-      el('lin-pw').value = d[1];
-      if (d[2] === 'admin') el('rtab-admin').click();
-      else el('rtab-client').click();
-    });
-  });
-
-  
   /* ── API save handler ── */
   const lapiBtn = el('btn-lagre-api-setup');
-  if (lapiBtn) lapiBtn.addEventListener('click', () => {
-    const u = CU; if (!u) return;
-    u.keyOpenAI      = (el('c-key-openai')      ||{}).value || '';
-    u.keyVapi        = (el('c-key-vapi')        ||{}).value || '';
-    u.keyElevenLabs  = (el('c-key-elevenlabs')  ||{}).value || '';
-    u.keyTwilioSid   = (el('c-key-twilio-sid')  ||{}).value || '';
-    u.keyTwilioToken = (el('c-key-twilio-token')||{}).value || '';
-    u.keyHubspot     = (el('c-key-hubspot')     ||{}).value || '';
-    u.n8nUrl         = (el('c-n8n-url')         ||{}).value || '';
-    u.webhookUrl     = (el('c-webhook-url')      ||{}).value || '';
-    toast('Nøkler lagret ✓');
+  if (lapiBtn) lapiBtn.addEventListener('click', async () => {
+    const u = CU; if (!u || !u.clientId) return;
+    const keyMap = {
+      'c-key-openai': 'openai', 'c-key-vapi': 'vapi', 'c-key-elevenlabs': 'elevenlabs',
+      'c-key-twilio-sid': 'twilio_sid', 'c-key-twilio-token': 'twilio_token', 'c-key-hubspot': 'hubspot',
+    };
+    const promises = [];
+    for (const [elemId, keyType] of Object.entries(keyMap)) {
+      const val = (el(elemId)||{}).value || '';
+      if (val) {
+        promises.push(sb.from('client_api_keys').upsert(
+          { client_id: u.clientId, key_type: keyType, key_value: val },
+          { onConflict: 'client_id,key_type' }
+        ));
+      }
+    }
+    // Save n8n + webhook on client
+    const clientUpdates = {};
+    const n8nVal = (el('c-n8n-url')||{}).value; if (n8nVal !== undefined) clientUpdates.n8n_url = n8nVal;
+    const whVal = (el('c-webhook-url')||{}).value; if (whVal !== undefined) clientUpdates.webhook_url = whVal;
+    if (Object.keys(clientUpdates).length) {
+      promises.push(sb.from('clients').update(clientUpdates).eq('id', u.clientId));
+    }
+    await Promise.all(promises);
+    toast('Nokler lagret');
   });
 
   /* ── Webhook copy ── */
   const whCopy = el('c-webhook-copy');
   if (whCopy) whCopy.addEventListener('click', () => {
     const v = (el('c-webhook-url')||{}).value || '';
-    if (v) { navigator.clipboard?.writeText(v); toast('URL kopiert ✓'); }
-    else toast('Ingen URL å kopiere', 'warn');
+    if (v) { navigator.clipboard?.writeText(v); toast('URL kopiert'); }
+    else toast('Ingen URL a kopiere', 'warn');
   });
 
   /* ── Client settings save ── */
   const cSetSave = el('btn-lagre-klient-set');
-  if (cSetSave) cSetSave.addEventListener('click', () => {
-    const u = CU; if (!u) return;
+  if (cSetSave) cSetSave.addEventListener('click', async () => {
+    const u = CU; if (!u || !u.clientId) return;
     const co = (el('c-set-co')||{}).value;
     const cp = (el('c-set-cp')||{}).value;
-    if (co) u.company = co;
-    if (cp) u.contact = cp;
-    toast('Innstillinger lagret ✓');
+    const updates = {};
+    if (co) { updates.name = co; u.company = co; }
+    if (cp !== undefined) { updates.contact_name = cp; u.contact = cp; }
+    if (Object.keys(updates).length) {
+      await sb.from('clients').update(updates).eq('id', u.clientId);
+    }
+    const nmEl3 = el('c-name'); if (nmEl3 && co) nmEl3.textContent = co;
+    toast('Innstillinger lagret');
   });
 
-/* ── Admin nav ── */
+  /* ── Admin nav ── */
   document.querySelectorAll('.ani[data-page]').forEach(item => {
     item.addEventListener('click', () => aGo(item.dataset.page));
   });
@@ -2438,47 +2433,39 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.tsel').forEach(ts => {
     ts.addEventListener('click', () => pickTier(parseInt(ts.dataset.t)));
   });
-  pickTier(1); // default
+  pickTier(1);
 
   /* Klient opprettet modal */
   el('btn-kopier-tilgang').addEventListener('click', () => {
     const email = el('cl-done-em').textContent;
-    const pw    = el('cl-done-pw').textContent;
-    navigator.clipboard.writeText(`E-post: ${email}\nPassord: ${pw}`).catch(() => {});
-    toast('Innloggingsdetaljer kopiert ✓');
+    const pw2 = el('cl-done-pw').textContent;
+    navigator.clipboard.writeText(`E-post: ${email}\nPassord: ${pw2}`).catch(() => {});
+    toast('Innloggingsdetaljer kopiert');
   });
   el('btn-kopier-velkost').addEventListener('click', () => {
     const c = _lastClient;
-    const tekst = `Hei${c.contact ? ' ' + c.contact : ''}!\n\nVelkommen som klient hos Simply Complex Solutions 🚀\n\nInnlogging:\n• URL: [CTM-dashboardets URL]\n• E-post: ${c.email || ''}\n• Passord: ${c.pw || ''}\n\nDin avtale: ${fmtKr(c.avtaleKr || 0)}\n\nTa kontakt på hei@simplycomplex.no om du har spørsmål.\n\nBeste hilsener,\nSCS-teamet`;
+    const tekst = `Hei${c.contact?' '+c.contact:''}!\n\nVelkommen som klient hos Simply Complex Solutions!\n\nInnlogging:\n- URL: ${window.location.href}\n- E-post: ${c.email||''}\n- Passord: ${c.pw||''}\n\nDin avtale: ${fmtKr(c.avtaleKr||0)}\n\nTa kontakt pa hei@simplycomplex.no om du har sporsmal.\n\nBeste hilsener,\nSCS-teamet`;
     navigator.clipboard.writeText(tekst).catch(() => {});
-    toast('Velkomsttekst kopiert ✓');
+    toast('Velkomsttekst kopiert');
   });
   el('btn-goto-kl').addEventListener('click', () => { closeModal('m-cl-done'); aGo('a-kl'); });
 
   /* ── Be om flere agenter ── */
-  el('upg-send-btn').addEventListener('click', () => {
+  el('upg-send-btn').addEventListener('click', async () => {
     const antall = el('upg-antall').value.trim();
-    const msg    = el('upg-msg').value.trim();
-    if (!antall) { toast('Angi antall agenter du ønsker', 'err'); return; }
-    const company = CU && CU.company ? CU.company : 'Ukjent klient';
-    const now = new Date().toLocaleTimeString('no-NO');
-    const feed = el('a-feed');
-    if (feed) {
-      const d = document.createElement('div');
-      d.className = 'ai fn';
-      d.innerHTML = '<div class="aic" style="background:rgba(0,229,160,0.15)">➕</div>'
-        + '<div><div style="font-size:12px;font-weight:600;color:var(--g);">'
-        + company + ' ber om ' + antall + ' ny' + (antall === '1' ? '' : 'e')
-        + ' agent' + (antall === '1' ? '' : 'er') + '</div>'
-        + '<div style="font-size:10px;color:var(--mu);font-family:monospace;margin-top:1px;">'
-        + now + ' · ' + (msg ? msg.slice(0, 60) : 'Ingen ekstra info') + '</div></div>';
-      feed.insertBefore(d, feed.firstChild);
-      while (feed.children.length > 6) feed.removeChild(feed.lastChild);
+    const msg = el('upg-msg').value.trim();
+    if (!antall) { toast('Angi antall agenter du onsker', 'err'); return; }
+    if (CU?.clientId) {
+      await sb.from('support_tickets').insert({
+        client_id: CU.clientId, user_id: CU.id,
+        subject: 'Forespørsel: ' + antall + ' nye agenter',
+        description: msg || 'Ingen ekstra info',
+        priority: 2,
+      });
     }
-    el('upg-antall').value = '';
-    el('upg-msg').value = '';
+    el('upg-antall').value = ''; el('upg-msg').value = '';
     closeModal('m-upgrade');
-    toast('Forespørsel sendt til SCS ✓', 'ok');
+    toast('Forespørsel sendt til SCS');
   });
 
   /* ── Inviter bruker ── */
@@ -2486,38 +2473,66 @@ document.addEventListener('DOMContentLoaded', () => {
   el('btn-do-inviter').addEventListener('click', () => {
     const nm = el('inv-nm').value.trim();
     const em = el('inv-em').value.trim();
-    if (!nm || !em) { toast('Navn og e-post påkrevd', 'err'); return; }
-    el('inv-nm').value = '';
-    el('inv-em').value = '';
+    if (!nm || !em) { toast('Navn og e-post pakrevd', 'err'); return; }
+    el('inv-nm').value = ''; el('inv-em').value = '';
     closeModal('m-invuser');
-    toast('Invitasjon sendt til ' + nm + ' ✓');
+    toast('Invitasjon sendt til ' + nm);
   });
 
-  /* ── Klient: søk og filter ── */
+  /* ── Klient: sok og filter ── */
   el('cl-search').addEventListener('input', () => renderClientsTable(el('cl-search').value, el('cl-tier-filter').value));
   el('cl-tier-filter').addEventListener('change', () => renderClientsTable(el('cl-search').value, el('cl-tier-filter').value));
 
   /* ── Ny agent ── */
-  // Populate klient dropdown
-  document.querySelectorAll('#ny-klient option:not(:first-child)').forEach(o => o.remove());
-  CLIENTS.forEach(cl => {
-    const opt = document.createElement('option');
-    opt.textContent = cl.n;
-    el('ny-klient').appendChild(opt);
-  });
-  el('btn-opprett-agent').addEventListener('click', () => {
+  el('btn-opprett-agent').addEventListener('click', async () => {
     const nm = el('ny-nm').value.trim();
-    if (!nm) { toast('Skriv inn agentnavn først', 'err'); return; }
+    const klient = el('ny-klient').value;
+    if (!nm) { toast('Skriv inn agentnavn forst', 'err'); return; }
+
+    const cl = CLIENTS.find(c => c.n === klient);
+    if (!cl) { toast('Velg en klient forst', 'err'); return; }
+
     const btn = el('btn-opprett-agent');
-    btn.textContent = '⏳...'; btn.disabled = true;
-    setTimeout(() => {
-      AGENTS.push({ nm, ch: el('ny-kanal').value.replace(/^[^ ]+ /, ''), em: '🤖', bg: 'rgba(0,229,160,.08)', act: 0, rate: 99, status: 'aktiv' });
+    btn.textContent = '⏳ Oppretter...'; btn.disabled = true;
+
+    const { error } = await sb.from('agents').insert({
+      client_id: cl.id, name: nm,
+      channels: el('ny-kanal').value.replace(/^[^ ]+ /, ''),
+      emoji: '🤖', bg_color: 'rgba(0,229,160,.08)',
+    });
+
+    if (error) { toast('Feil: ' + error.message, 'err'); }
+    else {
+      await loadAdminData();
       renderAgentCards();
+      updateAdminStats();
       el('ny-nm').value = '';
-      btn.textContent = '⚡ Aktiver agent'; btn.disabled = false;
+      toast(`Agent "${nm}" opprettet`);
       aGo('a-ag');
-      toast(`Agent "${nm}" opprettet ✓`);
-    }, 700);
+    }
+    btn.textContent = '⚡ Aktiver agent'; btn.disabled = false;
+  });
+
+  /* ── Populate klient dropdown ── */
+  function populateClientDropdown() {
+    const sel = el('ny-klient'); if (!sel) return;
+    const opts = sel.querySelectorAll('option:not(:first-child)');
+    opts.forEach(o => o.remove());
+    CLIENTS.forEach(cl => {
+      const opt = document.createElement('option');
+      opt.textContent = cl.n; sel.appendChild(opt);
+    });
+  }
+
+  // Observer: re-populate dropdown when navigating to "ny agent" page
+  const origAGo = aGo;
+  window.aGoWrap = function(pg) { origAGo(pg); if (pg === 'a-ny') populateClientDropdown(); };
+  document.querySelectorAll('.ani[data-page]').forEach(item => {
+    item.removeEventListener('click', () => {});
+    item.addEventListener('click', () => { origAGo(item.dataset.page); if (item.dataset.page === 'a-ny') populateClientDropdown(); });
+  });
+  document.querySelectorAll('[data-goto]').forEach(btn => {
+    btn.addEventListener('click', () => { origAGo(btn.dataset.goto); if (btn.dataset.goto === 'a-ny') populateClientDropdown(); });
   });
 
   /* ── Integrasjoner ── */
@@ -2528,7 +2543,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const badge = btn.previousElementSibling;
         if (badge) { badge.textContent = 'TILKOBLET'; badge.className = 'bge ba'; }
         btn.textContent = '✓ Tilkoblet'; btn.disabled = false;
-        toast('Tilkoblet ✓');
+        toast('Tilkoblet');
       }, 1100);
     });
   });
@@ -2540,125 +2555,56 @@ document.addEventListener('DOMContentLoaded', () => {
     const webhookEl = el('webhook-url');
     navigator.clipboard.writeText(webhookEl.textContent).catch(() => {});
     webhookEl.style.color = 'var(--g)'; setTimeout(() => webhookEl.style.color = '', 1500);
-    toast('Webhook URL kopiert ✓');
+    toast('Webhook URL kopiert');
   });
   el('btn-open-sb').addEventListener('click', () => window.open('https://supabase.com/dashboard','_blank'));
   el('btn-open-n8n').addEventListener('click', () => window.open('https://app.n8n.cloud','_blank'));
 
   /* ── Email/Voice save ── */
-  el('btn-save-email').addEventListener('click', () => toast('Email-konfig lagret ✓'));
-  el('btn-save-voice').addEventListener('click', () => toast('Voice-konfig lagret ✓'));
-  el('btn-export-api').addEventListener('click', () => toast('Rapport eksportert ✓'));
+  el('btn-save-email').addEventListener('click', () => toast('Email-konfig lagret'));
+  el('btn-save-voice').addEventListener('click', () => toast('Voice-konfig lagret'));
+  el('btn-export-api').addEventListener('click', () => toast('Rapport eksportert'));
 
   /* ── Glemt passord ── */
   el('l-forgot').addEventListener('click', () => openModal('m-glemt-pw'));
-  el('btn-forgot-send').addEventListener('click', () => {
+  el('btn-forgot-send').addEventListener('click', async () => {
     const em = (el('forgot-em')||{}).value;
     if (!em) { toast('Fyll inn e-post', 'err'); return; }
-    toast('Forespørsel sendt. SCS tar kontakt.');
+    if (sb) {
+      const { error } = await sb.auth.resetPasswordForEmail(em, { redirectTo: window.location.origin });
+      if (error) toast('Feil: ' + error.message, 'err');
+      else toast('Tilbakestillingslenke sendt til ' + em);
+    }
     closeModal('m-glemt-pw');
   });
 
   /* ── Pause alle agenter ── */
-  el('btn-pause-alle').addEventListener('click', () => {
+  el('btn-pause-alle').addEventListener('click', async () => {
     if (!confirm('Pause ALLE agenter?')) return;
-    AGENTS.forEach(a => a.status = 'pause');
+    await sb.from('agents').update({ status: 'pauset' }).neq('status', 'feil');
+    await loadAdminData();
     renderAgentCards();
     toast('Alle agenter pausert', 'warn');
   });
 
-  /* ── Klient innstillinger ── */
-  el('btn-lagre-klient-set').addEventListener('click', () => {
-    const co = el('c-set-co')?.value;
-    const cp = el('c-set-cp')?.value;
-    if (CU) { if (co) CU.company = co; if (cp) CU.contact = cp; }
-    const nmEl = el('c-name'); if (nmEl && co) nmEl.textContent = co;
-    toast('Innstillinger lagret ✓');
-  });
-
   /* ── Support sak ── */
-  el('btn-send-sak').addEventListener('click', () => {
+  el('btn-send-sak').addEventListener('click', async () => {
     const emne = el('sup-emne')?.value?.trim() || '';
-    if (!emne) { toast('Skriv inn emne først', 'err'); return; }
+    if (!emne) { toast('Skriv inn emne forst', 'err'); return; }
     el('btn-send-sak').textContent = '⏳ Sender...'; el('btn-send-sak').disabled = true;
+    if (CU?.clientId) {
+      await sb.from('support_tickets').insert({
+        client_id: CU.clientId, user_id: CU.id,
+        subject: emne, description: '', priority: 2,
+      });
+    }
     setTimeout(() => {
-      toast('Sak "' + emne.slice(0, 28) + '" sendt ✓');
+      toast('Sak "' + emne.slice(0, 28) + '" sendt');
       el('sup-emne').value = '';
       el('btn-send-sak').textContent = '📤 Send sak'; el('btn-send-sak').disabled = false;
-    }, 800);
+    }, 400);
   });
 });
-
-/* ══ renderClientAgentConfig ══ */
-function renderClientAgentConfig() {
-  const u = CU;
-  const container = el('c-agent-config-list');
-  if (!container || !u) return;
-
-  const idxList = (u.agentIdx && u.agentIdx.length)
-    ? u.agentIdx
-    : AGENTS.map((_,i) => i).filter(i => AGENTS[i] && AGENTS[i].klient === u.company);
-  const agenter = idxList.map(i => AGENTS[i]).filter(Boolean);
-
-  let out = '';
-
-  // Always show general knowledge input
-  out += '<div style="background:rgba(0,229,160,.04);border:1px solid rgba(0,229,160,.15);border-radius:11px;padding:14px;margin-bottom:2px;">'
-    + '<div style="font-size:11.5px;color:var(--m2);margin-bottom:10px;">'
-    + (agenter.length
-        ? '<span style="font-weight:700;color:var(--g);">📚 Generell kunnskap</span> — deles med alle agentene dine.'
-        : '<span style="font-weight:700;color:var(--g);">ℹ️ SCS setter opp agentene dine.</span> Du kan allerede legge inn informasjon agentene vil bruke.')
-    + '</div>'
-    + '<div class="fg1"><textarea class="fgt" id="cl-general-knowledge" style="height:100px;font-size:12px;" placeholder="Produktinfo, priser, FAQ, rutiner, kontaktinfo, åpningstider...">'
-    + (u.generalKnowledge||'') + '</textarea></div>'
-    + '<button class="btn btn-g btn-sm" id="cl-save-general-know" style="margin-top:8px;width:100%;">💾 Lagre kunnskap</button>'
-    + '</div>';
-
-  agenter.forEach((a, ai) => {
-    const idx = idxList[ai];
-    out += '<div style="border:1px solid var(--b2);border-radius:11px;padding:14px;background:var(--s3);">'
-      + '<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px;">'
-      + '<div style="width:34px;height:34px;border-radius:8px;background:' + a.bg + ';display:flex;align-items:center;justify-content:center;font-size:15px;">' + (a.em||'🤖') + '</div>'
-      + '<div style="flex:1;"><div style="font-weight:700;font-size:13px;">' + a.nm + '</div><div style="font-size:11px;color:var(--m2);">' + (a.ch||'—') + '</div></div>'
-      + '<span class="bge ' + (a.status==='aktiv'?'ba':'bp') + '" style="font-size:9px;">' + (a.status||'aktiv').toUpperCase() + '</span>'
-      + '</div>'
-      + (a.knowledge
-          ? '<div style="background:var(--bg);border:1px solid rgba(0,229,160,.2);border-radius:8px;padding:9px 12px;margin-bottom:10px;">'
-            + '<div style="font-size:10px;font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Aktiv kunnskap fra SCS</div>'
-            + '<div style="font-size:12px;color:var(--m2);white-space:pre-wrap;max-height:70px;overflow-y:auto;">' + a.knowledge + '</div>'
-            + '</div>'
-          : '')
-      + '<div class="fg1" style="margin-bottom:8px;"><label class="fgl">📝 Din tilleggskunnskap for ' + a.nm + '</label>'
-      + '<textarea class="fgt cl-ag-knowledge" data-idx="' + idx + '" style="height:75px;font-size:12px;" placeholder="Spesifikk info, rutiner, instrukser kun for denne agenten...">'
-      + (a.clientKnowledge||'') + '</textarea></div>'
-      + '<div class="fg1" style="margin-bottom:8px;"><label class="fgl">💬 Innspill til SCS</label>'
-      + '<textarea class="fgt cl-ag-feedback" data-idx="' + idx + '" style="height:50px;font-size:12px;" placeholder="F.eks.: Agenten bør nevne ny pakke, eller alltid svare på norsk.">'
-      + (a.clientFeedback||'') + '</textarea></div>'
-      + '<button class="btn btn-g btn-sm cl-ag-save" data-idx="' + idx + '" style="width:100%;">💾 Lagre</button>'
-      + '</div>';
-  });
-
-  container.innerHTML = out;
-
-  const gBtn = el('cl-save-general-know');
-  if (gBtn) gBtn.addEventListener('click', () => {
-    u.generalKnowledge = (el('cl-general-knowledge')||{}).value || '';
-    toast('Kunnskap lagret ✓');
-  });
-
-  container.querySelectorAll('.cl-ag-save').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = parseInt(btn.dataset.idx);
-      const card = btn.closest('div[style*="border:1px solid var(--b2)"]');
-      if (!card || !AGENTS[idx]) return;
-      const kt = card.querySelector('.cl-ag-knowledge');
-      const ft = card.querySelector('.cl-ag-feedback');
-      if (kt) AGENTS[idx].clientKnowledge = kt.value.trim();
-      if (ft) AGENTS[idx].clientFeedback  = ft.value.trim();
-      toast('Lagret ✓');
-    });
-  });
-}
 
 </script>
 </body>
