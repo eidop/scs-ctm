@@ -1,0 +1,2665 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCS CTM Platform v11</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ━━━━━━━━━━━━━━━━━━━━━━━ TOKENS ━━━━━━━━━━━━━━━━━━━━━━━ */
+:root{
+  --bg:#070a0e; --s:#0d1119; --s2:#131a23; --s3:#19202c;
+  --b:rgba(255,255,255,0.055); --b2:rgba(255,255,255,0.1);
+  --g:#00e5a0; --b1:#2f8bff; --o:#ff6b35; --pu:#9d60fb; --au:#f59e0b;
+  --tx:#e2e6f0; --mu:#48556a; --m2:#8490a8;
+  --er:#ff3d3d; --wa:#ffaa00;
+  --t1:#00e5a0; --t1b:rgba(0,229,160,0.07); --t1e:rgba(0,229,160,0.2);
+  --t2:#2f8bff; --t2b:rgba(47,139,255,0.07); --t2e:rgba(47,139,255,0.2);
+  --t3:#f59e0b; --t3b:rgba(245,158,11,0.07); --t3e:rgba(245,158,11,0.2);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;}
+body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--tx);overflow-x:hidden;}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━ APP LAYERS ━━━━━━━━━━━━━━━━━━━━━━━ */
+#v-login,#v-admin,#v-client{display:none;min-height:100vh;}
+#v-login.on{display:flex;}
+#v-admin.on{display:flex;}
+#v-client.on{display:block;}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━ LOGIN ━━━━━━━━━━━━━━━━━━━━━━━ */
+#v-login{align-items:center;justify-content:center;background:var(--bg);position:relative;overflow:hidden;}
+.orb{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none;}
+.o1{width:600px;height:600px;background:rgba(0,229,160,0.03);top:-150px;left:-150px;}
+.o2{width:500px;height:500px;background:rgba(47,139,255,0.04);bottom:-100px;right:-100px;}
+.o3{width:350px;height:350px;background:rgba(245,158,11,0.025);top:30%;left:35%;}
+
+.lw{position:relative;z-index:10;width:440px;max-width:94vw;}
+.l-logo{text-align:center;margin-bottom:36px;}
+.l-mark{font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:26px;letter-spacing:-0.5px;}
+.l-mark span{color:var(--g);}
+.l-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--mu);letter-spacing:2.5px;text-transform:uppercase;margin-top:6px;}
+.l-card{background:var(--s);border:1px solid var(--b2);border-radius:18px;padding:30px;box-shadow:0 40px 100px rgba(0,0,0,0.5);}
+.l-head{font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:20px;margin-bottom:3px;}
+.l-desc{font-size:12.5px;color:var(--m2);margin-bottom:22px;}
+
+.rtabs{display:flex;background:var(--s2);border-radius:10px;padding:3px;margin-bottom:22px;gap:2px;}
+.rtab{flex:1;padding:9px;text-align:center;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--m2);transition:all 0.18s;user-select:none;}
+.rtab.on{background:var(--s3);color:var(--tx);}
+.rtab.on.at{color:var(--g);}
+.rtab.on.ct{color:var(--b1);}
+
+.fg{margin-bottom:14px;}
+.fl{font-size:11.5px;font-weight:600;color:var(--m2);margin-bottom:5px;display:block;}
+.fi{width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:10px 13px;font-size:13px;color:var(--tx);font-family:'Instrument Sans',sans-serif;outline:none;transition:all 0.15s;}
+.fi:focus{border-color:var(--g);box-shadow:0 0 0 3px rgba(0,229,160,0.07);}
+.fi.cf:focus{border-color:var(--b1);box-shadow:0 0 0 3px rgba(47,139,255,0.07);}
+
+.lbtn{width:100%;padding:12px;border-radius:10px;font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer;border:none;transition:all 0.2s;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.lbtn-a{background:var(--g);color:#000;}
+.lbtn-a:hover{background:#00ffaa;transform:translateY(-1px);box-shadow:0 8px 28px rgba(0,229,160,0.3);}
+.lbtn-c{background:var(--b1);color:#fff;}
+.lbtn-c:hover{background:#5aa3ff;transform:translateY(-1px);box-shadow:0 8px 28px rgba(47,139,255,0.3);}
+
+.l-hints{margin-top:18px;border-top:1px solid var(--b);padding-top:16px;display:flex;flex-direction:column;gap:7px;}
+.l-hl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--mu);margin-bottom:3px;}
+.hint{display:flex;align-items:center;gap:11px;padding:9px 12px;background:var(--s2);border:1px solid var(--b);border-radius:8px;cursor:pointer;transition:all 0.15s;}
+.hint:hover{border-color:var(--b2);background:var(--s3);}
+.hint-role{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:1px;text-transform:uppercase;}
+.hint-creds{font-size:11.5px;color:var(--mu);font-family:'DM Mono',monospace;margin-top:1px;}
+.hint-arrow{margin-left:auto;font-size:11px;opacity:0.6;}
+.lerr{background:rgba(255,61,61,0.08);border:1px solid rgba(255,61,61,0.2);border-radius:8px;padding:9px 13px;font-size:12px;color:var(--er);margin-bottom:14px;display:none;}
+.lerr.on{display:block;}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━ ADMIN SHELL ━━━━━━━━━━━━━━━━━━━━━━━ */
+#v-admin{flex-direction:row;}
+.asb{width:250px;min-height:100vh;background:var(--s);border-right:1px solid var(--b);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100;overflow-y:auto;}
+.asb::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:linear-gradient(180deg,transparent 0%,var(--g) 40%,var(--g) 60%,transparent 100%);opacity:0.25;}
+.asb-logo{padding:22px 20px 14px;border-bottom:1px solid var(--b);flex-shrink:0;}
+.asb-mark{font-family:'Syne',sans-serif;font-weight:800;font-size:15.5px;letter-spacing:-0.4px;}
+.asb-mark span{color:var(--g);}
+.asb-sub{font-family:'DM Mono',monospace;font-size:9px;color:var(--mu);letter-spacing:2px;text-transform:uppercase;margin-top:3px;}
+.asb-mode{margin:10px 14px 0;background:rgba(0,229,160,0.07);border:1px solid var(--t1e);border-radius:7px;padding:5px 10px;font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--g);display:flex;align-items:center;gap:7px;}
+.asb-pulse{width:6px;height:6px;border-radius:50%;background:var(--g);flex-shrink:0;animation:pulse 1.5s infinite;}
+.anav{padding:12px 10px;flex:1;}
+.asl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--mu);padding:10px 12px 4px;}
+.ani{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--m2);transition:all 0.15s;margin-bottom:1px;user-select:none;}
+.ani:hover{background:var(--s2);color:var(--tx);}
+.ani.on{background:rgba(0,229,160,0.09);color:var(--g);}
+.ani .ic{width:16px;text-align:center;font-size:13px;flex-shrink:0;}
+.nbg{margin-left:auto;font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;font-family:'DM Mono',monospace;}
+.ng{background:var(--g);color:#000;}
+.nb{background:var(--b1);color:#fff;}
+.nw{background:var(--wa);color:#000;}
+.nr{background:var(--er);color:#fff;}
+.asb-foot{padding:12px;border-top:1px solid var(--b);flex-shrink:0;}
+.auc{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;background:var(--s2);cursor:pointer;transition:all 0.15s;}
+.auc:hover{background:var(--s3);}
+.aua{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--g),var(--b1));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#000;flex-shrink:0;border:2px solid rgba(0,229,160,0.3);}
+.aun{font-size:12px;font-weight:700;}
+.aur{font-size:10px;color:var(--g);font-family:'DM Mono',monospace;}
+.amain{margin-left:250px;flex:1;min-height:100vh;}
+.atb{background:var(--s);border-bottom:1px solid var(--b);padding:13px 26px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.apt{font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:17px;letter-spacing:-0.3px;display:flex;align-items:center;gap:10px;}
+.ac{padding:22px 26px;}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━ CLIENT SHELL ━━━━━━━━━━━━━━━━━━━━━━━ */
+#v-client{background:#050810;}
+.c-topstrip{height:3px;background:linear-gradient(90deg,var(--b1),var(--pu),transparent);}
+.ctb{background:#0a0e18;border-bottom:1px solid rgba(47,139,255,0.14);padding:0 28px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.c-mark{font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:15px;letter-spacing:-0.4px;}
+.c-mark span{color:var(--b1);}
+.c-sep{width:1px;height:20px;background:rgba(47,139,255,0.18);}
+.cnav{display:flex;gap:2px;}
+.cni{padding:6px 13px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:500;color:var(--m2);transition:all 0.15s;user-select:none;}
+.cni:hover{background:rgba(255,255,255,0.04);color:var(--tx);}
+.cni.on{background:rgba(47,139,255,0.1);color:var(--b1);}
+.ctbr{display:flex;align-items:center;gap:12px;}
+.c-cbadge{display:flex;align-items:center;gap:8px;padding:5px 13px;background:rgba(47,139,255,0.08);border:1px solid rgba(47,139,255,0.18);border-radius:8px;font-size:12px;font-weight:600;color:var(--b1);}
+.c-tbadge{padding:2px 7px;background:rgba(47,139,255,0.14);border-radius:4px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.5px;}
+.c-av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--b1),var(--pu));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;}
+.c-content{padding:22px 28px;max-width:1220px;}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━ TIER BANNERS ━━━━━━━━━━━━━━━━━━━━━━━ */
+.tier-alert{background:rgba(255,170,0,0.07);border:1.5px solid rgba(255,170,0,0.3);border-radius:13px;padding:16px 20px;display:flex;align-items:center;gap:14px;margin-bottom:20px;animation:alertPulse 3s ease-in-out infinite;}
+@keyframes alertPulse{0%,100%{border-color:rgba(255,170,0,0.3)}50%{border-color:rgba(255,170,0,0.6)}}
+.ta-icon{font-size:28px;flex-shrink:0;}
+.ta-text{flex:1;}
+.ta-title{font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:14.5px;color:var(--wa);margin-bottom:3px;}
+.ta-desc{font-size:12.5px;color:var(--m2);}
+.ta-btn{background:var(--wa);color:#000;border:none;padding:9px 18px;border-radius:8px;font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:13px;cursor:pointer;flex-shrink:0;transition:all 0.15s;}
+.ta-btn:hover{background:#ffcc00;transform:translateY(-1px);}
+.tier-warn{background:rgba(255,107,53,0.06);border:1px solid rgba(255,107,53,0.25);border-radius:10px;padding:11px 14px;display:flex;align-items:center;gap:10px;margin-bottom:16px;font-size:12.5px;}
+.tw-icon{font-size:18px;flex-shrink:0;}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━ SHARED COMPONENTS ━━━━━━━━━━━━━━━━━━━━ */
+.btn{padding:7px 15px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;border:none;transition:opacity .12s,transform .1s,background .15s,border-color .15s;font-family:'Instrument Sans',sans-serif;}
+.btn:active{transform:scale(.97);opacity:.85;}
+.btn-g{background:var(--g);color:#000;}
+.btn-g:hover{background:#00ffaa;transform:translateY(-1px);}
+.btn-b{background:var(--b1);color:#fff;}
+.btn-b:hover{background:#5aa3ff;transform:translateY(-1px);}
+.btn-gh{background:transparent;color:var(--m2);border:1px solid var(--b2);}
+.btn-gh:hover{background:var(--s2);color:var(--tx);}
+.btn-er{background:rgba(255,61,61,0.1);color:var(--er);border:1px solid rgba(255,61,61,0.2);}
+.btn-er:hover{background:rgba(255,61,61,0.2);}
+.btn-wa{background:rgba(255,170,0,0.15);color:var(--wa);border:1px solid rgba(255,170,0,0.25);}
+.btn-wa:hover{background:rgba(255,170,0,0.25);}
+.btn-sm{padding:5px 11px;font-size:11.5px;}
+
+/* Pages */
+.pg{display:none;}.pg.on{display:block;}
+.cpg{display:none;}.cpg.on{display:block;}
+
+/* Cards */
+.card{background:var(--s);border:1px solid var(--b);border-radius:12px;overflow:hidden;}
+.ch{padding:14px 18px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between;}
+.ct{font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:13.5px;}
+.ccard{background:#0a0e18;border:1px solid rgba(47,139,255,0.08);border-radius:12px;overflow:hidden;}
+.cch{padding:13px 16px;border-bottom:1px solid rgba(47,139,255,0.07);display:flex;align-items:center;justify-content:space-between;}
+.cct{font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:13px;}
+
+/* Stat cards */
+.sc{background:var(--s);border:1px solid var(--b);border-radius:11px;padding:16px 18px;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--ca,var(--g));opacity:0.7;}
+.csc{background:#0a0e18;border:1px solid rgba(47,139,255,0.1);border-radius:11px;padding:16px 18px;position:relative;overflow:hidden;}
+.csc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--ca,var(--b1));opacity:0.7;}
+.slbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--mu);margin-bottom:8px;}
+.sval{font-family:'Instrument Sans',sans-serif;font-size:22px;font-weight:600;letter-spacing:0;margin-bottom:4px;line-height:1.1;}
+.schg{font-size:11px;font-family:'DM Mono',monospace;}
+.sup{color:var(--g);}.sdn{color:var(--er);}.smt{color:var(--mu);}
+
+/* Grids */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+.gms{display:grid;grid-template-columns:1fr 290px;gap:13px;}
+.col{display:flex;flex-direction:column;gap:13px;}
+
+/* Table */
+.tw{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead tr{border-bottom:1px solid var(--b);}
+th{padding:9px 14px;font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mu);font-weight:500;text-align:left;}
+td{padding:11px 14px;font-size:12.5px;border-bottom:1px solid var(--b);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.012);}
+.tmn{font-family:'DM Mono',monospace;font-size:11px;color:var(--m2);}
+.av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
+
+/* Badges */
+.bge{padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700;font-family:'DM Mono',monospace;letter-spacing:0.5px;display:inline-block;}
+.ba{background:rgba(0,229,160,0.1);color:var(--g);border:1px solid var(--t1e);}
+.bp{background:rgba(255,170,0,0.1);color:var(--wa);border:1px solid rgba(255,170,0,0.2);}
+.bd{background:rgba(78,86,104,0.2);color:var(--m2);border:1px solid var(--b2);}
+.be{background:rgba(255,61,61,0.1);color:var(--er);border:1px solid rgba(255,61,61,0.2);}
+.bt1{background:var(--t1b);color:var(--t1);border:1px solid var(--t1e);}
+.bt2{background:var(--t2b);color:var(--t2);border:1px solid var(--t2e);}
+.bt3{background:var(--t3b);color:var(--t3);border:1px solid var(--t3e);}
+
+/* Tags */
+.tag{font-family:'DM Mono',monospace;font-size:10px;padding:3px 8px;border-radius:20px;}
+.tg{background:rgba(0,229,160,0.1);color:var(--g);border:1px solid var(--t1e);}
+.tb{background:rgba(47,139,255,0.1);color:var(--b1);border:1px solid var(--t2e);}
+.tw2{background:rgba(255,170,0,0.1);color:var(--wa);border:1px solid rgba(255,170,0,0.2);}
+.tr-badge{display:inline-flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:10px;padding:3px 9px;border-radius:20px;}
+.tr-g{color:var(--g);background:rgba(0,229,160,0.08);border:1px solid var(--t1e);}
+.tr-b{color:var(--b1);background:rgba(47,139,255,0.08);border:1px solid var(--t2e);}
+
+/* Progress */
+.pb{height:5px;background:var(--s3);border-radius:3px;overflow:hidden;}
+.pbf{height:100%;border-radius:3px;transition:width 0.9s ease;}
+.pb-tall{height:8px;}
+
+/* Form */
+.fgl{font-size:11.5px;font-weight:600;color:var(--m2);margin-bottom:5px;display:block;}
+.fgi{width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:9px 12px;font-size:12.5px;color:var(--tx);font-family:'Instrument Sans',sans-serif;outline:none;transition:border 0.15s;}
+.fgi:focus{border-color:var(--g);box-shadow:0 0 0 3px rgba(0,229,160,0.06);}
+.fgs{width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:9px 12px;font-size:12.5px;color:var(--tx);font-family:'Instrument Sans',sans-serif;outline:none;}
+.fgs option{background:var(--s2);}
+.fgt{width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:9px 12px;font-size:12.5px;color:var(--tx);font-family:'Instrument Sans',sans-serif;outline:none;resize:vertical;min-height:80px;}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px;}
+.fg1{margin-bottom:12px;}
+
+/* Toggle */
+.trow{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--b);}
+.trow:last-child{border-bottom:none;}
+.tlbl{font-size:13px;font-weight:500;}
+.tog{position:relative;width:38px;height:21px;flex-shrink:0;}
+.tog input{opacity:0;width:0;height:0;}
+.ts{position:absolute;cursor:pointer;inset:0;background:var(--s3);border:1px solid var(--b2);border-radius:21px;transition:.2s;}
+.ts:before{position:absolute;content:"";height:15px;width:15px;left:2px;bottom:2px;background:var(--mu);border-radius:50%;transition:.2s;}
+.tog input:checked+.ts{background:rgba(0,229,160,0.18);border-color:var(--g);}
+.tog input:checked+.ts:before{transform:translateX(17px);background:var(--g);}
+
+/* Mini chart */
+.mc{display:flex;align-items:flex-end;gap:2.5px;height:36px;}
+.mcb{flex:1;border-radius:2px 2px 0 0;}
+
+/* Log */
+.loge{display:flex;gap:14px;padding:7px 16px;border-bottom:1px solid var(--b);font-family:'DM Mono',monospace;font-size:10.5px;}
+.loge:last-child{border-bottom:none;}
+.lt{color:var(--mu);flex-shrink:0;width:145px;}
+.ll{flex-shrink:0;width:55px;}
+.lok{color:var(--g);}.lin{color:var(--b1);}.lwa{color:var(--wa);}.ler{color:var(--er);}
+
+/* Activity feed */
+.ai{padding:9px 16px;display:flex;align-items:flex-start;gap:10px;border-bottom:1px solid var(--b);}
+.ai:last-child{border-bottom:none;}
+.aic{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px;}
+
+/* Client feed */
+.ti{padding:11px 16px;border-bottom:1px solid rgba(47,139,255,0.06);display:flex;align-items:flex-start;gap:11px;}
+.ti:last-child{border-bottom:none;}
+.tibg{padding:3px 8px;border-radius:5px;font-size:10px;font-weight:700;font-family:'DM Mono',monospace;letter-spacing:0.5px;flex-shrink:0;margin-top:2px;}
+.tiau{background:rgba(0,229,160,0.1);color:var(--g);border:1px solid var(--t1e);}
+.tiwa{background:rgba(255,170,0,0.1);color:var(--wa);border:1px solid rgba(255,170,0,0.2);}
+.tinw{background:rgba(47,139,255,0.1);color:var(--b1);border:1px solid var(--t2e);}
+
+/* Voice viz */
+@keyframes voiceA{0%,100%{height:5px;opacity:0.3}50%{height:34px;opacity:1}}
+.vbar{width:4px;border-radius:4px;background:var(--g);animation:voiceA 1.2s ease-in-out infinite;}
+.vviz{display:flex;align-items:center;gap:3px;height:44px;}
+
+/* Modal */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+.mo.on{display:flex;}
+.mbox{background:var(--s);border:1px solid var(--b2);border-radius:18px;width:min(480px,92vw);max-height:90vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.65);animation:fadeUp .22s ease;}
+.mhd{padding:20px 22px 0;display:flex;align-items:center;justify-content:space-between;}
+.mti{font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:16px;}
+.mcl{background:none;border:none;color:var(--mu);cursor:pointer;font-size:16px;padding:4px 6px;border-radius:6px;transition:color .15s;line-height:1;}
+.mcl:hover{color:var(--tx);}
+.mbd{padding:18px 22px;}
+.mft{padding:14px 22px 20px;display:flex;justify-content:flex-end;gap:9px;border-top:1px solid var(--b);}
+
+/* Animations */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+@keyframes flashN{0%{background:rgba(0,229,160,0.1)}100%{background:transparent}}
+@keyframes flashNB{0%{background:rgba(47,139,255,0.1)}100%{background:transparent}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes countUp{from{transform:translateY(5px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes pulseRow{0%{background:rgba(0,229,160,.09)}100%{background:transparent}}
+@keyframes alertPulse2{0%,100%{border-color:rgba(255,170,0,0.3)}50%{border-color:rgba(255,170,0,0.6)}}
+
+.ld{display:inline-block;width:6px;height:6px;background:var(--g);border-radius:50%;animation:pulse 1.5s infinite;vertical-align:middle;}
+.ld-b{background:var(--b1);}
+.anim-v{animation:countUp 0.3s ease forwards;}
+.fn{animation:flashN 1.5s ease forwards;}
+.fnb{animation:flashNB 1.5s ease forwards;}
+.new-row{animation:pulseRow 1.2s ease;}
+
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:4px;}
+
+/* API key row */
+.akr{display:flex;align-items:center;gap:9px;background:var(--s2);border:1px solid var(--b2);border-radius:7px;padding:9px 12px;}
+.akv{font-family:'DM Mono',monospace;font-size:11.5px;color:var(--m2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+</style>
+</head>
+<body>
+
+<!-- ╔══════════════════════════════════════════
+     ║  LOGIN
+     ╚══════════════════════════════════════════ -->
+<div id="v-login" class="on">
+  <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+  <div class="lw">
+    <div class="l-logo">
+      <div class="l-mark">Simply<span>Complex</span></div>
+      <div class="l-sub">CTM Platform v11</div>
+    </div>
+    <div class="l-card">
+      <div class="l-head">Logg inn</div>
+      <div class="l-desc">Velg kontotype for å komme i gang</div>
+      <div class="rtabs">
+        <div class="rtab at on" id="rtab-admin">🔐 &nbsp;SCS Admin</div>
+        <div class="rtab ct" id="rtab-client">👤 &nbsp;Klient-portal</div>
+      </div>
+      <div class="lerr" id="lerr">Feil e-post eller passord. Prøv igjen.</div>
+      <div class="fg">
+        <label class="fl">E-post</label>
+        <input class="fi" id="lin-em" type="email" placeholder="din@email.no">
+      </div>
+      <div class="fg">
+        <label class="fl">Passord</label>
+        <input class="fi" id="lin-pw" type="password" placeholder="••••••••">
+      </div>
+      <div style="text-align:right;margin-top:-8px;margin-bottom:10px;"><span id="l-forgot" style="font-size:11px;color:var(--mu);cursor:pointer;">Glemt passord?</span></div>
+      <button class="lbtn lbtn-a" id="lbtn">
+        <span id="lbtn-ic">⚡</span> <span id="lbtn-tx">Logg inn som Admin</span>
+      </button>
+      <div class="l-hints">
+        <div class="l-hl">Demo-kontoer — klikk for å fylle inn</div>
+        <div class="hint" data-demo="admin">
+          <span style="font-size:22px;">🔐</span>
+          <div><div class="hint-role" style="color:var(--g);">SCS Admin</div><div class="hint-creds">admin@simplycomplex.no · admin123</div></div>
+          <div class="hint-arrow" style="color:var(--g);">→</div>
+        </div>
+        <div class="hint" data-demo="c1">
+          <span style="font-size:22px;">🏢</span>
+          <div><div class="hint-role" style="color:var(--b1);">Regnskap AS</div><div class="hint-creds">kunde@regnskapclient.no · klient123</div></div>
+          <div class="hint-arrow" style="color:var(--b1);">→</div>
+        </div>
+        <div class="hint" data-demo="c2">
+          <span style="font-size:22px;">🏡</span>
+          <div><div class="hint-role" style="color:var(--b1);">Eiendom Nord</div><div class="hint-creds">kontakt@eiendomnord.no · klient123</div></div>
+          <div class="hint-arrow" style="color:var(--b1);">→</div>
+        </div>
+        <div class="hint" data-demo="c3">
+          <span style="font-size:22px;">💻</span>
+          <div><div class="hint-role" style="color:var(--au);">Tech Solutions</div><div class="hint-creds">admin@techsolutions.no · klient123</div></div>
+          <div class="hint-arrow" style="color:var(--au);">→</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════
+     ║  ADMIN APP
+     ╚══════════════════════════════════════════ -->
+<div id="v-admin">
+  <aside class="asb">
+    <div class="asb-logo">
+      <div class="asb-mark">Simply<span>Complex</span></div>
+      <div class="asb-sub">CTM Platform v11</div>
+    </div>
+    <div class="asb-mode">
+      <div class="asb-pulse"></div>
+      <span id="conn-badge">Demo-modus</span>
+    </div>
+    <nav class="anav">
+      <div class="asl">Oversikt</div>
+      <div class="ani on" data-page="a-db"><span class="ic">⚡</span>Dashboard</div>
+      <div class="ani" data-page="a-tiers"><span class="ic">📊</span>Avtaler & ROI</div>
+      <div class="ani" data-page="a-kl"><span class="ic">👥</span>Klienter<span class="nbg ng" id="sb-cl">12</span></div>
+      <div class="ani" data-page="a-fak"><span class="ic">💳</span>Fakturering</div>
+
+      <div class="asl">Agenter & Kanaler</div>
+      <div class="ani" data-page="a-ag"><span class="ic">🤖</span>Agenter<span class="nbg ng" id="sb-ag">10</span></div>
+      <div class="ani" data-page="a-ny"><span class="ic">✨</span>Ny agent</div>
+      <div class="ani" data-page="a-int"><span class="ic">🔗</span>Integrasjoner</div>
+      <div class="ani" data-page="a-email"><span class="ic">📬</span>Email</div>
+      <div class="ani" data-page="a-voice"><span class="ic">📞</span>Voice</div>
+      <div class="ani" data-page="a-crm"><span class="ic">🏢</span>CRM</div>
+
+      <div class="asl">System</div>
+      <div class="ani" data-page="a-api"><span class="ic">💸</span>API-kostnader</div>
+      <div class="ani" data-page="a-usr"><span class="ic">🔑</span>Brukere</div>
+      <div class="ani" data-page="a-log"><span class="ic">📋</span>Logg<span class="nbg nw" id="sb-log">5</span></div>
+      <div class="ani" data-page="a-set"><span class="ic">⚙️</span>Innstillinger</div>
+    </nav>
+    <div class="asb-foot">
+      <div class="auc" id="a-logout-btn">
+        <div class="aua" id="a-av">E</div>
+        <div style="flex:1;min-width:0;">
+          <div class="aun" id="a-uname">Eido</div>
+          <div class="aur">SCS ADMIN</div>
+        </div>
+        <div style="font-size:12px;color:var(--mu);" title="Logg ut">⇥</div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="amain">
+
+    <!-- ── DASHBOARD ── -->
+    <section class="pg on" id="pg-a-db">
+      <div class="atb">
+        <div class="apt">⚡ Dashboard <span class="tr-badge tr-g" style="margin-left:4px;"><span class="ld"></span> Sanntid</span></div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--mu);" id="a-clk">--:--:--</div>
+          <button class="btn btn-g btn-sm" data-goto="a-ny">+ Ny agent</button>
+        </div>
+      </div>
+      <div class="ac">
+        <div class="g4">
+          <div class="sc" style="--ca:var(--g)"><div class="slbl">Aktive agenter</div><div class="sval" id="adb-ag">10</div><div class="schg sup">↑ sanntid</div></div>
+          <div class="sc" style="--ca:var(--b1)"><div class="slbl">Handlinger i dag</div><div class="sval" id="adb-act">3 089</div><div class="schg sup">↑ live</div></div>
+          <div class="sc" style="--ca:var(--o)"><div class="slbl">Leads i dag</div><div class="sval" id="adb-leads">105</div><div class="schg sup">↑ live</div></div>
+          <div class="sc" style="--ca:var(--au)"><div class="slbl">Totale klienter</div><div class="sval" id="adb-cl">12</div><div class="schg smt">aktive</div></div>
+        </div>
+
+        <div class="gms" style="margin-bottom:13px;">
+          <div class="col">
+            <div class="card">
+              <div class="ch"><div class="ct">Alle agenter — live ytelse</div><span class="tr-badge tr-g"><span class="ld"></span> Live</span></div>
+              <div class="tw"><table>
+                <thead><tr><th>Agent</th><th>Klient</th><th>Handlinger</th><th>Rate</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr><td><div style="font-weight:600;">Email Support</div><div class="tmn">📬 Gmail · HubSpot</div></td><td class="tmn">Regnskap AS</td><td class="tmn" id="aa1">412</td><td style="color:var(--g);font-family:'DM Mono',monospace;font-size:11px;">96%</td><td><span class="bge ba">AKTIV</span></td></tr>
+                  <tr><td><div style="font-weight:600;">Voice Agent</div><div class="tmn">📞 VAPI</div></td><td class="tmn">Eiendom Nord</td><td class="tmn" id="aa2">58</td><td style="color:var(--b1);font-family:'DM Mono',monospace;font-size:11px;">91%</td><td><span class="bge ba">AKTIV</span></td></tr>
+                  <tr><td><div style="font-weight:600;">Lead Capture</div><div class="tmn">🎯 Email · CRM</div></td><td class="tmn">Regnskap AS</td><td class="tmn" id="aa3">777</td><td style="color:var(--o);font-family:'DM Mono',monospace;font-size:11px;">88%</td><td><span class="bge ba">AKTIV</span></td></tr>
+                  <tr><td><div style="font-weight:600;">Enterprise Bot</div><div class="tmn">⚡ Multi-kanal</div></td><td class="tmn">Tech Solutions</td><td class="tmn" id="aa4">1 842</td><td style="color:var(--au);font-family:'DM Mono',monospace;font-size:11px;">97%</td><td><span class="bge ba">AKTIV</span></td></tr>
+                </tbody>
+              </table></div>
+            </div>
+            <div class="g3" style="margin-bottom:0;">
+              <div class="card" style="padding:15px 16px;"><div class="slbl">Email i dag</div><div style="font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:19px;margin-bottom:9px;" id="adb-em">412</div><div class="mc" id="adb-emc"></div></div>
+              <div class="card" style="padding:15px 16px;"><div class="slbl">Voice i dag</div><div style="font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:19px;margin-bottom:9px;" id="adb-vo">58</div><div class="mc" id="adb-vmc"></div></div>
+              <div class="card" style="padding:15px 16px;"><div class="slbl">Leads i dag</div><div style="font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:19px;margin-bottom:9px;" id="adb-lc">47</div><div class="mc" id="adb-lmc"></div></div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card">
+              <div class="ch"><div class="ct"><span class="ld"></span> Live aktivitet</div></div>
+              <div id="a-feed"></div>
+            </div>
+            <div class="card" style="padding:16px 18px;">
+              <div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:13px;margin-bottom:12px;">Total ROI denne måneden</div>
+              <div style="display:flex;flex-direction:column;gap:7px;font-size:12.5px;">
+                <div style="display:flex;justify-content:space-between;"><span style="color:var(--mu);">Spart tid (alle klienter)</span><span id="roi-h" style="font-family:'DM Mono',monospace;">—</span></div>
+                <div style="display:flex;justify-content:space-between;"><span style="color:var(--mu);">Estimert lønnskost spart</span><span id="roi-s" style="font-family:'DM Mono',monospace;color:var(--g);">—</span></div>
+                <div style="display:flex;justify-content:space-between;"><span style="color:var(--mu);">SCS inntekt (MRR)</span><span id="roi-mrr" style="font-family:'DM Mono',monospace;color:var(--g);">—</span></div>
+                <div style="height:1px;background:var(--b);"></div>
+                <div style="display:flex;justify-content:space-between;"><span style="font-weight:700;">Klient netto besparelse</span><span style="font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:17px;color:var(--g);" id="roi-n">—</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── AVTALER & ROI ── -->
+    <section class="pg" id="pg-a-tiers">
+      <div class="atb"><div class="apt">📊 Avtaler & ROI</div><span class="tr-badge tr-g"><span class="ld"></span> Live</span></div>
+      <div class="ac">
+        <div class="g4" style="margin-bottom:18px;">
+          <div class="sc" style="--ca:var(--g)"><div class="slbl">Total MRR</div><div class="sval" id="av-mrr">—</div><div class="schg sup">↑ per mnd</div></div>
+          <div class="sc" style="--ca:var(--b1)"><div class="slbl">Samlet klientbesparelse</div><div class="sval" id="av-besparing">—</div><div class="schg sup">kr/mnd</div></div>
+          <div class="sc" style="--ca:var(--au)"><div class="slbl">Snitt ROI</div><div class="sval" id="av-roi">—</div><div class="schg smt">per klient</div></div>
+          <div class="sc" style="--ca:var(--o)"><div class="slbl">Aktive avtaler</div><div class="sval" id="av-antall">—</div><div class="schg smt">klienter</div></div>
+        </div>
+        <div class="card">
+          <div class="ch">
+            <div class="ct">Alle avtaler</div>
+            <div style="font-size:11px;color:var(--mu);font-family:'DM Mono',monospace;">sortert etter besparelse</div>
+          </div>
+          <div class="tw">
+            <table>
+              <thead><tr><th>Klient</th><th>Størrelse</th><th>Agenter</th><th>Avtale/mnd</th><th>Kunden sparer/mnd</th><th>ROI</th><th>Netto til kunden</th><th>Status</th></tr></thead>
+              <tbody id="av-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card" style="margin-top:14px;">
+          <div class="ch"><div class="ct">Intern kapasitetsveiledning</div><div style="font-size:11px;color:var(--mu);font-family:'DM Mono',monospace;">brukes ikke mot kunden</div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:0 18px 18px;">
+            <div style="background:var(--t1b);border:1px solid var(--t1e);border-radius:10px;padding:14px;">
+              <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--t1);margin-bottom:8px;">⚡ Liten</div>
+              <div style="font-size:12.5px;color:var(--m2);">Opptil 5 agenter</div>
+              <div style="font-size:11px;color:var(--mu);margin-top:5px;">Typisk avtale: 5 000–15 000 kr/mnd avhengig av ROI</div>
+            </div>
+            <div style="background:var(--t2b);border:1px solid var(--t2e);border-radius:10px;padding:14px;">
+              <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--t2);margin-bottom:8px;">🚀 Medium</div>
+              <div style="font-size:12.5px;color:var(--m2);">Opptil 15 agenter</div>
+              <div style="font-size:11px;color:var(--mu);margin-top:5px;">Typisk avtale: 12 000–30 000 kr/mnd avhengig av ROI</div>
+            </div>
+            <div style="background:var(--t3b);border:1px solid var(--t3e);border-radius:10px;padding:14px;">
+              <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-bottom:8px;">🏆 Stor</div>
+              <div style="font-size:12.5px;color:var(--m2);">50+ agenter</div>
+              <div style="font-size:11px;color:var(--mu);margin-top:5px;">Typisk avtale: 25 000–80 000+ kr/mnd avhengig av ROI</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── KLIENTER ── -->
+    <section class="pg" id="pg-a-kl">
+      <div class="atb">
+        <div class="apt">👥 Klienter <span class="bge ba" style="font-size:10px;padding:3px 9px;margin-left:6px;">🔒 ADMIN</span></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span class="tr-badge tr-g"><span class="ld"></span> Live</span>
+          <button class="btn btn-g btn-sm" id="btn-newcl">+ Ny klient</button>
+        </div>
+      </div>
+      <div class="ac">
+        <div class="g4">
+          <div class="sc" style="--ca:var(--g)"><div class="slbl">Totale klienter</div><div class="sval" id="kl-tot">12</div><div class="schg sup">↑ aktive</div></div>
+          <div class="sc" style="--ca:var(--au)"><div class="slbl">MRR</div><div class="sval" id="kl-mrr">—</div><div class="schg sup">kr</div></div>
+          <div class="sc" style="--ca:var(--b1)"><div class="slbl">Aktive agenter</div><div class="sval" id="kl-ag">—</div><div class="schg sup">live</div></div>
+          <div class="sc" style="--ca:var(--er)"><div class="slbl">Maxet kapasitet</div><div class="sval" id="kl-max">1</div><div class="schg" style="color:var(--wa);">trenger oppgradering</div></div>
+        </div>
+        <div class="card">
+          <div class="ch">
+            <div class="ct">Klient-oversikt</div>
+            <div style="display:flex;gap:8px;">
+              <div style="display:flex;align-items:center;gap:7px;background:var(--s2);border:1px solid var(--b2);border-radius:7px;padding:6px 11px;">
+                <span style="color:var(--mu);">🔍</span>
+                <input id="cl-search" placeholder="Søk..." style="background:none;border:none;outline:none;font-size:12.5px;color:var(--tx);font-family:'Instrument Sans',sans-serif;width:130px;">
+              </div>
+              <select id="cl-tier-filter" class="fgs" style="width:auto;padding:6px 11px;font-size:12px;">
+                <option value="">Alle størrelser</option>
+                <option value="1">Liten (≤5 agenter)</option>
+                <option value="2">Medium (≤15)</option>
+                <option value="3">Stor (50+)</option>
+              </select>
+            </div>
+          </div>
+          <div class="tw"><table>
+            <thead><tr><th>Klient</th><th>Størrelse</th><th>Agenter</th><th>Handlinger i dag</th><th>Avtale/mnd</th><th>Kunden sparer/mnd</th><th>ROI</th><th>Status</th><th></th></tr></thead>
+            <tbody id="cl-tbody"></tbody>
+          </table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── FAKTURERING ── -->
+    <section class="pg" id="pg-a-fak">
+      <div class="atb"><div class="apt">💳 Fakturering <span class="bge ba" style="font-size:10px;margin-left:6px;">🔒 ADMIN</span></div></div>
+      <div class="ac">
+        <div class="g3">
+          <div class="sc" style="--ca:var(--au)"><div class="slbl">MRR</div><div class="sval" id="fak-mrr">—</div><div class="schg sup">kr/mnd</div></div>
+          <div class="sc" style="--ca:var(--g)"><div class="slbl">ARR</div><div class="sval" id="fak-arr">—</div><div class="schg sup">kr/år</div></div>
+          <div class="sc" style="--ca:var(--b1)"><div class="slbl">Betalingstatus</div><div class="sval">11/12</div><div class="schg" style="color:var(--wa);">1 venter</div></div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">Fakturaer februar 2026</div></div>
+          <div class="tw"><table><thead><tr><th>Klient</th><th>Avtale/mnd</th><th>Kunden sparer</th><th>Forfall</th><th>Status</th></tr></thead>
+          <tbody id="fak-tbody"></tbody>
+          </table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── AGENTER ── -->
+    <section class="pg" id="pg-a-ag">
+      <div class="atb"><div class="apt">🤖 Agenter</div><div style="display:flex;gap:8px;"><span class="tr-badge tr-g"><span class="ld"></span> Live</span><button class="btn btn-g btn-sm" data-goto="a-ny">+ Ny agent</button></div></div>
+      <div class="ac">
+        <div class="g2" style="margin-bottom:13px;">
+          <div class="card" style="padding:15px 17px;"><div class="slbl">Total portefølje</div><div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:22px;color:var(--g);margin-top:6px;" id="adm-tot-besparing">—</div><div style="font-size:10.5px;color:var(--mu);font-family:'DM Mono',monospace;margin-top:4px;">samlet klientbesparelse/mnd</div></div>
+          <div class="card" style="padding:15px 17px;"><div class="slbl">Totale handlinger i dag</div><div style="font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:20px;margin-top:6px;" id="ag-tot">—</div><div style="font-size:11px;color:var(--g);font-family:'DM Mono',monospace;margin-top:3px;">↑ sanntid</div></div>
+        </div>
+        <div class="g2" id="ag-cards"></div>
+      </div>
+    </section>
+
+    <!-- ── NY AGENT ── -->
+    <section class="pg" id="pg-a-ny">
+      <div class="atb"><div class="apt">✨ Ny agent</div><button class="btn btn-gh btn-sm" data-goto="a-ag">← Tilbake</button></div>
+      <div class="ac" style="max-width:680px;">
+        <div class="card">
+          <div class="ch"><div class="ct">Opprett AI-agent</div></div>
+          <div style="padding:20px;">
+            <div class="fg2">
+              <div class="fg1"><label class="fgl">Agent-navn *</label><input class="fgi" id="ny-nm" placeholder="f.eks. Email Support — Regnskap AS"></div>
+              <div class="fg1"><label class="fgl">Tilordne klient</label>
+                <select class="fgs" id="ny-klient">
+                  <option value="">Velg klient...</option>
+                </select>
+              </div>
+            </div>
+            <div class="fg2">
+              <div class="fg1"><label class="fgl">Kanaltype</label><select class="fgs" id="ny-kanal"><option>📬 Email</option><option>📞 Voice</option><option>🎯 Lead Capture</option><option>📄 Dokument</option></select></div>
+              <div class="fg1"><label class="fgl">Tone</label><select class="fgs"><option>Profesjonell</option><option>Vennlig</option><option>Salgsrettet</option><option>Empatisk</option></select></div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;margin-top:8px;"><button class="btn btn-g" id="btn-opprett-agent">⚡ Aktiver agent</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── INTEGRASJONER ── -->
+    <section class="pg" id="pg-a-int">
+      <div class="atb"><div class="apt">🔗 Integrasjoner</div></div>
+      <div class="ac">
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="card" style="padding:15px 18px;display:flex;align-items:center;gap:14px;"><div style="width:42px;height:42px;background:#EA4335;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">📧</div><div style="flex:1;"><div style="font-weight:700;">Gmail</div><div class="tmn">noreply@simplycomplex.no · synk. nå</div></div><span class="bge ba">TILKOBLET</span></div>
+          <div class="card" style="padding:15px 18px;display:flex;align-items:center;gap:14px;"><div style="width:42px;height:42px;background:#FF7A59;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">🏢</div><div style="flex:1;"><div style="font-weight:700;">HubSpot CRM</div><div class="tmn">1 342 kontakter synkronisert</div></div><span class="bge ba">TILKOBLET</span></div>
+          <div class="card" style="padding:15px 18px;display:flex;align-items:center;gap:14px;"><div style="width:42px;height:42px;background:#6B47ED;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">📞</div><div style="flex:1;"><div style="font-weight:700;">VAPI Voice AI</div><div class="tmn">+47 22 33 44 55 · aktiv</div></div><span class="bge ba">TILKOBLET</span></div>
+          <div class="card" style="padding:15px 18px;display:flex;align-items:center;gap:14px;opacity:0.6;"><div style="width:42px;height:42px;background:#4A154B;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;">💬</div><div style="flex:1;"><div style="font-weight:700;">Slack</div><div class="tmn">Varsler til Slack-kanal</div></div><span class="bge bd">IKKE KOBLET</span><button class="btn btn-g btn-sm int-koble-btn">Koble til</button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── EMAIL ── -->
+    <section class="pg" id="pg-a-email">
+      <div class="atb"><div class="apt">📬 Email</div><span class="bge ba" style="padding:5px 12px;">● AKTIV</span></div>
+      <div class="ac">
+        <div class="gms">
+          <div class="card"><div class="ch"><div class="ct">Email-agent konfigurasjon</div></div><div style="padding:18px;"><div class="fg2"><div class="fg1"><label class="fgl">Svar fra</label><input class="fgi" value="Sofia — SCS Support"></div><div class="fg1"><label class="fgl">Svar-email</label><input class="fgi" value="sofia@client.no"></div></div><div class="fg1"><label class="fgl">Signatur</label><textarea class="fgt" style="min-height:55px;">Med vennlig hilsen, Sofia</textarea></div><button class="btn btn-g btn-sm" id="btn-save-email">Lagre</button></div></div>
+          <div class="col">
+            <div class="g2" style="margin-bottom:0;"><div class="sc" style="--ca:var(--g)"><div class="slbl">I dag</div><div class="sval" id="em-td">412</div></div><div class="sc" style="--ca:var(--b1)"><div class="slbl">Suksessrate</div><div class="sval">96%</div></div></div>
+            <div class="card" style="padding:15px 17px;"><div class="trow"><div><div class="tlbl">Spam-filter</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div><div class="trow"><div><div class="tlbl">Auto-oppfølging</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── VOICE ── -->
+    <section class="pg" id="pg-a-voice">
+      <div class="atb"><div class="apt">📞 Voice</div><span class="bge ba" style="padding:5px 12px;">● AKTIV</span></div>
+      <div class="ac">
+        <div class="gms">
+          <div class="card"><div class="ch"><div class="ct">Voice-agent konfigurasjon</div></div><div style="padding:18px;"><div class="fg2"><div class="fg1"><label class="fgl">Nummer</label><input class="fgi" value="+47 22 33 44 55" readonly style="background:var(--s3);color:var(--m2);"></div><div class="fg1"><label class="fgl">Stemme</label><select class="fgs"><option>Sofia (norsk, F)</option><option>Ola (norsk, M)</option></select></div></div><div class="fg1"><label class="fgl">Åpningshilsen</label><textarea class="fgt" style="min-height:55px;">Hei! Du har ringt Regnskap AS. Jeg er Sofia.</textarea></div><button class="btn btn-g btn-sm" id="btn-save-voice">Lagre</button></div></div>
+          <div class="col">
+            <div class="g2" style="margin-bottom:0;"><div class="sc" style="--ca:var(--b1)"><div class="slbl">Samtaler i dag</div><div class="sval" id="vo-td">58</div></div><div class="sc" style="--ca:var(--g)"><div class="slbl">Snitt varighet</div><div class="sval">3.4m</div></div></div>
+            <div class="card" style="padding:16px;text-align:center;"><div class="vviz" style="justify-content:center;margin-bottom:8px;"><div class="vbar" style="animation-delay:0s;"></div><div class="vbar" style="animation-delay:0.15s;"></div><div class="vbar" style="animation-delay:0.3s;"></div><div class="vbar" style="animation-delay:0.45s;"></div><div class="vbar" style="animation-delay:0.6s;"></div><div class="vbar" style="animation-delay:0.75s;"></div></div><div class="tmn">Ingen aktiv samtale</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── CRM ── -->
+    <section class="pg" id="pg-a-crm">
+      <div class="atb"><div class="apt">🏢 CRM</div><span class="tr-badge tr-g"><span class="ld"></span> Live</span></div>
+      <div class="ac">
+        <div class="g4">
+          <div class="sc" style="--ca:var(--g)"><div class="slbl">Kontakter</div><div class="sval" id="crm-c">1 342</div><div class="schg sup">↑ live</div></div>
+          <div class="sc" style="--ca:var(--o)"><div class="slbl">Leads</div><div class="sval" id="crm-l">162</div><div class="schg sup">↑ live</div></div>
+          <div class="sc" style="--ca:var(--b1)"><div class="slbl">Konvertert</div><div class="sval">54</div><div class="schg smt">33% rate</div></div>
+          <div class="sc" style="--ca:var(--pu)"><div class="slbl">Avg. score</div><div class="sval" id="crm-s">7.6</div><div class="schg sup">↑ live</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── API KOSTNADER ── -->
+    <section class="pg" id="pg-a-api">
+      <div class="atb"><div class="apt">💸 API-kostnader</div><span class="tr-badge tr-g"><span class="ld"></span> Live</span></div>
+      <div class="ac">
+        <div class="g4" style="margin-bottom:18px;">
+          <div class="sc" style="--ca:var(--b1)"><div class="slbl">Total API-kost/mnd</div><div class="sval" id="api-tot">—</div><div class="schg smt">alle klienter</div></div>
+          <div class="sc" style="--ca:var(--er)"><div class="slbl">Over grense</div><div class="sval" id="api-over">—</div><div class="schg smt">klienter</div></div>
+          <div class="sc" style="--ca:var(--wa)"><div class="slbl">Nær grense</div><div class="sval" id="api-warn">—</div><div class="schg smt">klienter</div></div>
+          <div class="sc" style="--ca:var(--g)"><div class="slbl">Snitt API-kost</div><div class="sval" id="api-avg">—</div><div class="schg smt">per klient</div></div>
+        </div>
+        <div style="background:rgba(47,139,255,.06);border:1px solid rgba(47,139,255,.15);border-radius:11px;padding:14px 18px;margin-bottom:18px;font-size:12.5px;color:var(--m2);line-height:1.7;">
+          <span style="color:var(--b1);font-weight:700;">ℹ️ Slik fungerer det:</span> Kunden eier og betaler sine egne API-nøkler (OpenAI, VAPI osv.) direkte. SCS holder oversikt på estimert forbruk per klient basert på agentaktivitet.
+        </div>
+        <div class="card">
+          <div class="ch">
+            <div class="ct">API-forbruk per klient</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span class="tmn">denne måneden</span>
+              <button class="btn btn-gh btn-sm" id="btn-export-api">📊 Eksporter</button>
+            </div>
+          </div>
+          <div class="tw"><table>
+            <thead><tr><th>Klient</th><th>Agenter</th><th>API-kost/mnd</th><th>Grense</th><th>Utnyttelse</th><th>Status</th><th></th></tr></thead>
+            <tbody id="api-tbody"></tbody>
+          </table></div>
+        </div>
+        <div class="card" style="margin-top:14px;">
+          <div class="ch"><div class="ct">⚠️ Aktive varsler</div></div>
+          <div id="api-varsler" style="padding:0 18px 18px;display:flex;flex-direction:column;gap:9px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── BRUKERE ── -->
+    <section class="pg" id="pg-a-usr">
+      <div class="atb"><div class="apt">🔑 Brukere & tilgang <span class="bge ba" style="font-size:10px;margin-left:6px;">🔒 ADMIN</span></div>
+        <button class="btn btn-g btn-sm" id="btn-invuser">+ Inviter bruker</button>
+      </div>
+      <div class="ac">
+        <div class="card">
+          <div class="ch"><div class="ct">Brukere med tilgang</div></div>
+          <div class="tw"><table><thead><tr><th>Bruker</th><th>Rolle</th><th>Kan se</th><th>Siste innlogging</th><th></th></tr></thead>
+          <tbody id="usr-tbody"></tbody>
+          </table></div>
+        </div>
+        <div class="card" style="margin-top:13px;padding:18px;">
+          <div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:13px;margin-bottom:11px;">Tilgangssystem</div>
+          <div style="display:flex;flex-direction:column;gap:9px;">
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 13px;background:rgba(0,229,160,0.05);border:1px solid var(--t1e);border-radius:9px;"><span class="bge ba">SCS ADMIN</span><span style="font-size:12.5px;color:var(--m2);">Full tilgang — klienter, avtaler, fakturering, brukere, systemlogg</span></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 13px;background:rgba(47,139,255,0.05);border:1px solid var(--t2e);border-radius:9px;"><span class="bge bt2">KLIENT</span><span style="font-size:12.5px;color:var(--m2);">Kun eget klient-dashboard — ingen tilgang til andre klienter eller admindata</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── LOGG ── -->
+    <section class="pg" id="pg-a-log">
+      <div class="atb"><div class="apt">📋 Systemlogg</div><span class="tr-badge tr-g"><span class="ld"></span> Live</span></div>
+      <div class="ac">
+        <div class="g4" style="margin-bottom:16px;">
+          <div class="sc" style="--ca:var(--g)"><div class="slbl">OK</div><div class="sval" id="lg-ok">2 658</div></div>
+          <div class="sc" style="--ca:var(--b1)"><div class="slbl">Info</div><div class="sval" id="lg-in">184</div></div>
+          <div class="sc" style="--ca:var(--wa)"><div class="slbl">Advarsel</div><div class="sval" id="lg-wa">5</div></div>
+          <div class="sc" style="--ca:var(--er)"><div class="slbl">Feil</div><div class="sval" id="lg-er">0</div></div>
+        </div>
+        <div class="card"><div class="ch"><div class="ct"><span class="ld"></span> Live logg</div></div><div id="log-feed"></div></div>
+      </div>
+    </section>
+
+    <!-- ── INNSTILLINGER ── -->
+    <section class="pg" id="pg-a-set">
+      <div class="atb"><div class="apt">⚙️ Innstillinger</div><button class="btn btn-g btn-sm" id="btn-save-settings">Lagre alt</button></div>
+      <div class="ac">
+        <div style="background:linear-gradient(135deg,rgba(0,229,160,0.05),rgba(47,139,255,0.05));border:1.5px solid rgba(0,229,160,0.18);border-radius:14px;padding:22px;margin-bottom:18px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(0,229,160,0.1);display:flex;align-items:center;justify-content:center;font-size:20px;">🔌</div>
+            <div style="flex:1;">
+              <div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:14.5px;">Supabase Live-tilkobling</div>
+              <div style="font-size:12px;color:var(--m2);margin-top:2px;">Koble til din database — dashboardet viser ekte tall fra n8n</div>
+            </div>
+            <div id="set-conn-badge"><span class="tmn">◎ Ikke tilkoblet</span></div>
+          </div>
+          <div class="fg2">
+            <div class="fg1"><label class="fgl">Supabase Project URL</label><input class="fgi" id="sb-url" placeholder="https://xxxxxxxxxxxx.supabase.co"></div>
+            <div class="fg1"><label class="fgl">Anon Key (public)</label><input class="fgi" id="sb-key" placeholder="eyJhbGciOiJIUzI1NiIs..." type="password"><div class="tmn" style="margin-top:3px;">Supabase → Project Settings → API → anon public</div></div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button class="btn btn-g btn-sm" id="btn-test-sb">⚡ Test tilkobling</button>
+            <button class="btn btn-gh btn-sm" id="btn-open-sb">Åpne Supabase ↗</button>
+            <button class="btn btn-gh btn-sm" id="btn-open-n8n">Åpne n8n ↗</button>
+            <span id="sb-test-msg" class="tmn"></span>
+          </div>
+          <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(0,229,160,0.1);">
+            <div class="tmn" style="margin-bottom:7px;text-transform:uppercase;letter-spacing:1px;">n8n Webhook URL</div>
+            <div style="display:flex;align-items:center;gap:9px;background:var(--bg);border:1px solid var(--b2);border-radius:8px;padding:10px 13px;">
+              <code style="font-family:'DM Mono',monospace;font-size:11.5px;color:var(--g);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="webhook-url">https://din-n8n.app.n8n.cloud/webhook/scs-agent-log</code>
+              <button class="btn btn-gh btn-sm" id="btn-copy-webhook">📋 Kopier</button>
+            </div>
+          </div>
+        </div>
+        <div class="gms">
+          <div class="col">
+            <div class="card"><div class="ch"><div class="ct">Konto</div></div><div style="padding:18px;"><div class="fg2"><div class="fg1"><label class="fgl">Org. navn</label><input class="fgi" value="Simply Complex Solutions AS"></div><div class="fg1"><label class="fgl">Org. nr.</label><input class="fgi" value="924 182 XXX"></div></div><div class="fg1"><label class="fgl">Admin-email</label><input class="fgi" value="admin@simplycomplex.no"></div></div></div>
+            <div class="card"><div class="ch"><div class="ct">Varsler</div></div><div style="padding:18px;"><div class="trow"><div><div class="tlbl">Daglig rapport</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div><div class="trow"><div><div class="tlbl">Klient-eskalering</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div><div class="trow"><div><div class="tlbl">ROI-varsler</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div></div></div>
+            <div class="card"><div class="ch"><div class="ct">GDPR & AI Act art. 4</div><span class="tag tw2">Påkrevd</span></div><div style="padding:18px;"><div class="trow"><div><div class="tlbl">AI-opplysning til kunder</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div><div class="trow"><div><div class="tlbl">Datalagring i Norge</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div></div></div>
+          </div>
+          <div class="col">
+            <div class="card" style="padding:18px;"><div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:13px;margin-bottom:12px;">SCS portefølje</div><div style="background:rgba(0,229,160,.06);border:1px solid rgba(0,229,160,.2);border-radius:9px;padding:14px;"><div class="slbl">MRR</div><div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:18px;color:var(--g);" id="adm-mrr-set">—</div><div style="font-size:11px;color:var(--m2);margin-top:4px;">Snitt ROI per klient: <span style="color:var(--g);font-weight:700;" id="adm-avg-roi-set">—</span></div></div><button class="btn btn-gh" style="width:100%;margin-top:10px;" data-goto="a-tiers">Se alle avtaler →</button></div>
+            <div class="card" style="padding:18px;"><div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:13px;margin-bottom:12px;color:var(--er);">Farlig sone</div><div style="display:flex;flex-direction:column;gap:7px;"><button class="btn btn-er" style="width:100%;text-align:left;" id="btn-pause-alle">⏸ Pause alle agenter</button></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div><!-- /v-admin -->
+
+
+<!-- ╔══════════════════════════════════════════
+     ║  CLIENT APP
+     ╚══════════════════════════════════════════ -->
+<div id="v-client">
+  <div class="c-topstrip"></div>
+  <div class="ctb">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div class="c-mark">Simply<span>Complex</span></div>
+      <div class="c-sep"></div>
+      <nav class="cnav">
+        <div class="cni on" data-cpage="c-db">Dashboard</div>
+        <div class="cni" data-cpage="c-ag">Mine agenter</div>
+        <div class="cni" data-cpage="c-akt">Aktivitet</div>
+        <div class="cni" data-cpage="c-sup">Support</div>
+        <div class="cni" data-cpage="c-api">API-nøkler</div>
+        <div class="cni" data-cpage="c-set">Innstillinger</div>
+      </nav>
+    </div>
+    <div class="ctbr">
+      <div class="c-cbadge">
+        <span id="c-icon">🏢</span>
+        <span id="c-name">—</span>
+        <span class="c-tbadge" id="c-tbadge"></span>
+      </div>
+      <div class="tmn" id="c-clk">--:--:--</div>
+      <div class="c-av" id="c-av">—</div>
+      <button class="btn btn-gh btn-sm" id="c-logout-btn">Logg ut</button>
+    </div>
+  </div>
+
+  <div class="c-content">
+
+    <!-- ── CLIENT DASHBOARD ── -->
+    <div class="cpg on" id="cpg-c-db">
+      <div class="tier-alert" id="c-tier-alert" style="display:none;">
+        <div class="ta-icon">⚠️</div>
+        <div class="ta-text">
+          <div class="ta-title">Du har nådd maks agenter på din nåværende plan!</div>
+          <div class="ta-desc" id="c-alert-desc">Kontakt SCS for å utvide avtalen.</div>
+        </div>
+        <button class="ta-btn" data-modal="m-upgrade">📞 Kontakt SCS for oppgradering</button>
+      </div>
+      <div class="tier-warn" id="c-tier-warn" style="display:none;">
+        <div class="tw-icon">🔔</div>
+        <div style="flex:1;"><span style="font-weight:700;color:var(--wa);">Nærmer seg grensen: </span><span id="c-warn-desc" style="color:var(--m2);">—</span></div>
+        <button class="btn btn-wa btn-sm" data-modal="m-upgrade">Oppgrader</button>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:20px;letter-spacing:-0.3px;margin-bottom:3px;">Hei, <span id="c-greet">—</span> 👋</div>
+        <div style="font-size:13px;color:var(--m2);">Her er sanntidsoversikten over dine AI-agenter.</div>
+      </div>
+
+      <!-- ROI hero -->
+      <div style="border-radius:14px;padding:16px 20px;margin-bottom:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;background:rgba(0,229,160,.04);border:1px solid rgba(0,229,160,.15);" id="c-roi-hero">
+        <div style="padding-right:20px;border-right:1px solid rgba(255,255,255,.07);">
+          <div class="slbl">Du sparer per mnd</div>
+          <div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:26px;color:var(--g);letter-spacing:-0.5px;" id="c-hero-besparing">—</div>
+          <div style="font-size:11px;color:var(--mu);margin-top:3px;">estimert lønnskostnadsbesparelse</div>
+        </div>
+        <div style="padding:0 20px;border-right:1px solid rgba(255,255,255,.07);">
+          <div class="slbl">Avtale per mnd</div>
+          <div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:26px;color:var(--tx);letter-spacing:-0.5px;" id="c-hero-avtale">—</div>
+          <div style="font-size:11px;color:var(--mu);margin-top:3px;">betales til SCS</div>
+        </div>
+        <div style="padding-left:20px;">
+          <div class="slbl">Netto gevinst</div>
+          <div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:26px;letter-spacing:-0.5px;color:var(--g);" id="c-hero-netto">—</div>
+          <div id="c-hero-roi" style="font-size:11px;color:var(--mu);margin-top:3px;">ROI: —</div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="g4" style="margin-bottom:20px;">
+        <div class="csc" style="--ca:var(--b1)"><div class="slbl">Aktive agenter</div><div class="sval" id="c-s-ag">—</div><div class="schg sup">↑ sanntid</div></div>
+        <div class="csc" style="--ca:var(--g)"><div class="slbl">Handlinger i dag</div><div class="sval" id="c-s-act">—</div><div class="schg sup">↑ live</div></div>
+        <div class="csc" style="--ca:var(--o)"><div class="slbl">Leads fanget</div><div class="sval" id="c-s-leads">—</div><div class="schg sup">↑ live</div></div>
+        <div class="csc" style="--ca:var(--g)"><div class="slbl">Timer spart (mnd)</div><div class="sval" id="c-s-tid">—</div><div class="schg smt">estimert</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 270px;gap:14px;margin-bottom:14px;">
+        <div class="ccard">
+          <div class="cch"><div class="cct">Dine agenter — live</div><span class="tr-badge tr-b"><span class="ld ld-b"></span> Live</span></div>
+          <div id="c-aglist"></div>
+        </div>
+        <div class="ccard">
+          <div class="cch"><div class="cct">Siste aktivitet</div></div>
+          <div id="c-feed"></div>
+        </div>
+      </div>
+
+      <!-- ROI breakdown + chart -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;">
+        <div class="ccard" style="padding:17px;">
+          <div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:13px;margin-bottom:12px;">Avtaleoversikt</div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:12.5px;">
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--mu);">Timer spart</span><span id="c-roi-h" style="font-family:'DM Mono',monospace;">—</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--mu);">Estimert besparelse</span><span id="c-roi-s" style="color:var(--g);font-family:'DM Mono',monospace;">—</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--mu);">Avtalepris SCS</span><span id="c-plan-cost" style="font-family:'DM Mono',monospace;">—</span></div>
+            <div style="height:1px;background:rgba(0,229,160,0.1);"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-weight:700;">Din netto gevinst</span>
+              <span style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:18px;color:var(--g);" id="c-roi-n">—</span>
+            </div>
+            <div style="background:rgba(0,229,160,.07);border-radius:8px;padding:8px 11px;text-align:center;margin-top:2px;">
+              <span class="tmn">ROI </span>
+              <span style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:16px;color:var(--g);" id="c-roi-x">—</span>
+              <span id="c-roi-pct" class="tmn"> · du beholder —</span>
+            </div>
+          </div>
+        </div>
+        <div class="ccard" style="padding:17px;">
+          <div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:13px;margin-bottom:10px;" id="c-ch1-title">Handlinger i dag</div>
+          <div style="font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:20px;margin-bottom:9px;" id="c-ch1-val">—</div>
+          <div class="mc" id="c-chart1"></div>
+        </div>
+        <div class="ccard" style="padding:17px;">
+          <div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:13px;margin-bottom:10px;">Suksessrate (7 dager)</div>
+          <div style="font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:20px;margin-bottom:7px;color:var(--g);" id="c-rate">96%</div>
+          <div class="pb pb-tall"><div class="pbf" id="c-rateb" style="width:96%;background:var(--b1);"></div></div>
+          <div class="tmn" style="margin-top:5px;">Basert på siste 7 dager</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MINE AGENTER ── -->
+    <div class="cpg" id="cpg-c-ag">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+        <div><div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:19px;margin-bottom:3px;">Mine agenter</div><div style="font-size:12.5px;color:var(--m2);">Live ytelse for dine AI-agenter</div></div>
+        <span class="tr-badge tr-b"><span class="ld ld-b"></span> Sanntid</span>
+      </div>
+      <div class="tier-alert" id="c-ag-alert" style="display:none;margin-bottom:16px;">
+        <div class="ta-icon">🔒</div>
+        <div class="ta-text"><div class="ta-title">Maks agenter nådd!</div><div class="ta-desc" id="c-ag-alert-desc">Du kan ikke legge til flere agenter på din nåværende plan.</div></div>
+        <button class="ta-btn" data-modal="m-upgrade">Kontakt SCS →</button>
+      </div>
+      <div class="g2" id="c-agcards"></div>
+    </div>
+
+    <!-- ── AKTIVITET ── -->
+    <div class="cpg" id="cpg-c-akt">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+        <div><div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:19px;margin-bottom:3px;">Aktivitetslogg</div><div style="font-size:12.5px;color:var(--m2);">Alle automatiserte handlinger fra dine agenter</div></div>
+        <span class="tr-badge tr-b"><span class="ld ld-b"></span> Live</span>
+      </div>
+      <div class="ccard">
+        <div class="cch"><div class="cct">Siste handlinger</div></div>
+        <div id="c-actlog"></div>
+      </div>
+    </div>
+
+    <!-- ── SUPPORT ── -->
+    <div class="cpg" id="cpg-c-sup">
+      <div style="margin-bottom:18px;"><div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:19px;margin-bottom:3px;">Support</div><div style="font-size:12.5px;color:var(--m2);">Kontakt SCS-teamet direkte</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="ccard" style="padding:18px;">
+          <div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:13.5px;margin-bottom:14px;">Ny sak til SCS</div>
+          <div class="fg1"><label class="fgl">Emne</label><input class="fgi" id="sup-emne" placeholder="Beskriv hva du trenger hjelp med..."></div>
+          <div class="fg1"><label class="fgl">Prioritet</label><select class="fgs"><option>Normal</option><option>Høy</option><option>Kritisk</option></select></div>
+          <div class="fg1" style="margin-bottom:14px;"><label class="fgl">Beskrivelse</label><textarea class="fgt" placeholder="Gi oss detaljer..."></textarea></div>
+          <button class="btn btn-b" style="width:100%;" id="btn-send-sak">📤 Send sak</button>
+        </div>
+        <div class="col">
+          <div class="ccard" style="padding:16px 18px;">
+            <div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:13px;margin-bottom:12px;">Kontakt SCS</div>
+            <div style="display:flex;flex-direction:column;gap:10px;font-size:12.5px;">
+              <div style="display:flex;gap:11px;align-items:center;"><span style="font-size:16px;">📧</span><div><div style="font-weight:600;">Email</div><div style="color:var(--m2);">hei@simplycomplex.no</div></div></div>
+              <div style="display:flex;gap:11px;align-items:center;"><span style="font-size:16px;">💬</span><div><div style="font-weight:600;">Chat (Man–Fre 08–17)</div><div style="color:var(--m2);">Svartid: &lt;2t</div></div></div>
+              <div style="display:flex;gap:11px;align-items:center;"><span style="font-size:16px;">📞</span><div><div style="font-weight:600;">Telefon</div><div style="color:var(--m2);">+47 22 33 44 55</div></div></div>
+            </div>
+          </div>
+          <div class="ccard" style="padding:16px 18px;" id="c-sup-upgrade">
+            <div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:13px;margin-bottom:8px;color:var(--wa);">Vil du utvide avtalen?</div>
+            <div style="font-size:12.5px;color:var(--m2);margin-bottom:12px;">Kontakt SCS for å legge til flere agenter eller justere avtalen.</div>
+            <button class="btn btn-wa" style="width:100%;" data-modal="m-upgrade">📞 Kontakt SCS</button>
+          </div>
+          <div class="ccard" style="padding:16px 18px;">
+            <div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:13px;margin-bottom:10px;">Åpne saker</div>
+            <div style="font-size:12.5px;color:var(--m2);text-align:center;padding:18px 0;">Ingen åpne saker ✓</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── API-NØKLER ── -->
+    <div class="cpg" id="cpg-c-api">
+      <div style="margin-bottom:18px;">
+        <div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:18px;margin-bottom:3px;">Mine API-nøkler</div>
+        <div style="font-size:12.5px;color:var(--m2);">Du eier og kontrollerer dine egne nøkler</div>
+      </div>
+
+      <div class="ccard" style="margin-bottom:14px;">
+        <div class="cch"><div class="cct">🔑 API-nøkler</div></div>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:12px;">
+          <div style="background:rgba(0,229,160,.04);border:1px solid rgba(0,229,160,.12);border-radius:8px;padding:11px 14px;font-size:11.5px;color:var(--m2);line-height:1.7;">
+            <span style="color:var(--g);font-weight:700;">ℹ️ Du eier nøklene dine.</span> Kostnader belastes direkte av leverandørene. SCS bruker dem kun til å drive agentene dine.
+          </div>
+          <div>
+            <label class="fgl">🤖 OpenAI API Key</label>
+            <div style="display:flex;gap:7px;">
+              <input class="fgi" id="c-key-openai" placeholder="sk-proj-..." style="flex:1;font-family:monospace;font-size:11px;">
+              <a href="https://platform.openai.com/api-keys" target="_blank" class="btn btn-gh btn-sm">↗</a>
+            </div>
+          </div>
+          <div>
+            <label class="fgl">🏢 HubSpot Token <span style="font-weight:400;color:var(--mu);">valgfritt</span></label>
+            <div style="display:flex;gap:7px;">
+              <input class="fgi" id="c-key-hubspot" placeholder="pat-eu1-..." style="flex:1;font-family:monospace;font-size:11px;">
+              <a href="https://app.hubspot.com/private-apps" target="_blank" class="btn btn-gh btn-sm">↗</a>
+            </div>
+          </div>
+          <div style="border-top:1px solid var(--b2);padding-top:12px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div style="font-size:12px;font-weight:700;">📞 Voice-leverandør</div>
+              <span class="bge ba" style="font-size:9px;">VALGT AV SCS</span>
+            </div>
+            <div style="background:var(--s3);border-radius:9px;padding:12px 14px;margin-bottom:10px;">
+              <div style="font-weight:600;font-size:13px;margin-bottom:4px;" id="c-voice-provider-name">📞 VAPI</div>
+              <div style="font-size:11.5px;color:var(--m2);" id="c-voice-provider-desc">Alt-i-ett voice AI-platform. Enkel oppsett, betaler per minutt.</div>
+              <div style="font-size:11px;color:var(--mu);margin-top:6px;">Ønsker du å bytte? Kontakt SCS.</div>
+            </div>
+            <div id="c-voice-key-fields"></div>
+            <input type="hidden" id="c-key-sendgrid" value="">
+            <input type="hidden" id="c-key-supabase" value="">
+          </div>
+          <div>
+            <label class="fgl">🔗 n8n Instans URL <span style="font-weight:400;color:var(--mu);">valgfritt</span></label>
+            <input class="fgi" id="c-n8n-url" placeholder="https://din-n8n.app.n8n.cloud" style="width:100%;font-family:monospace;font-size:11px;">
+          </div>
+          <button class="btn btn-g btn-sm" id="btn-lagre-api-setup">💾 Lagre nøkler</button>
+        </div>
+      </div>
+
+      <div class="ccard" style="margin-bottom:14px;">
+        <div class="cch"><div class="cct">🔗 n8n Webhook</div></div>
+        <div style="padding:16px;">
+          <div style="background:rgba(47,139,255,.05);border:1px solid rgba(47,139,255,.15);border-radius:8px;padding:9px 12px;font-size:11.5px;color:var(--m2);margin-bottom:13px;"><span style="color:var(--b1);font-weight:700;">ℹ️</span> Finn URL-en i n8n under ditt SCS-workflow. SCS setter den opp for deg.</div>
+          <label class="fgl">Webhook URL</label>
+          <div style="display:flex;gap:7px;margin-bottom:11px;">
+            <input class="fgi" id="c-webhook-url" placeholder="https://din-n8n.app.n8n.cloud/webhook/..." style="flex:1;font-family:monospace;font-size:11px;">
+            <button class="btn btn-gh btn-sm" id="c-webhook-copy">📋</button>
+          </div>
+          <a href="https://app.n8n.cloud" target="_blank" class="btn btn-gh btn-sm">Åpne n8n ↗</a>
+        </div>
+      </div>
+
+      <div class="ccard">
+        <div class="cch" style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="cct">🤖 Agent-oppførsel</div>
+          <span style="font-size:11.5px;color:var(--mu);">Kunnskap og innspill per agent</span>
+        </div>
+        <div id="c-agent-config-list" style="padding:0 16px 16px;display:flex;flex-direction:column;gap:14px;margin-top:4px;"></div>
+      </div>
+    </div>
+
+    <!-- ── INNSTILLINGER (client) ── -->
+    <div class="cpg" id="cpg-c-set">
+      <div style="margin-bottom:18px;"><div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:19px;margin-bottom:3px;">Innstillinger</div><div style="font-size:12.5px;color:var(--m2);">Administrer din SCS-konto</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="ccard"><div class="cch"><div class="cct">Kontaktinformasjon</div></div><div style="padding:18px;"><div class="fg1"><label class="fgl">Selskapsnavn</label><input class="fgi" id="c-set-co"></div><div class="fg1"><label class="fgl">Kontaktperson</label><input class="fgi" id="c-set-cp"></div><div class="fg1" style="margin-bottom:14px;"><label class="fgl">Email (skrivebeskyttet)</label><input class="fgi" id="c-set-em" readonly style="background:var(--s3);color:var(--m2);"></div><button class="btn btn-b btn-sm" id="btn-lagre-klient-set">Lagre</button></div></div>
+        <div class="ccard"><div class="cch"><div class="cct">Varsler</div></div><div style="padding:18px;"><div class="trow"><div><div class="tlbl">Daglig rapport</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div><div class="trow"><div><div class="tlbl">Eskalerings-varsler</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div><div class="trow"><div><div class="tlbl">Ukentlig sammendrag</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div></div></div>
+      </div>
+      <div class="ccard" style="margin-top:13px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;">
+        <div><div style="font-weight:700;margin-bottom:3px;">Din avtale med SCS</div><div style="font-size:12px;color:var(--m2);">Ta kontakt med oss for å justere avtalen.</div></div>
+        <button class="btn btn-gh btn-sm" data-cpage="c-sup">Kontakt SCS →</button>
+      </div>
+    </div>
+
+  </div><!-- /c-content -->
+</div><!-- /v-client -->
+
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━ MODALS ━━━━━━━━━━━━━━━━━━━━━━━ -->
+
+<!-- NY KLIENT -->
+<div class="mo" id="m-newcl">
+  <div class="mbox" style="width:min(560px,94vw);">
+    <div class="mhd"><div class="mti">🏢 Ny klient</div><button class="mcl mo-close">✕</button></div>
+    <div class="mbd" style="padding-bottom:6px;">
+      <div class="slbl" style="margin-bottom:10px;">Selskapsinformasjon</div>
+      <div class="fg2" style="margin-bottom:0;">
+        <div class="fg1"><label class="fgl">Selskapsnavn *</label><input class="fgi" id="nc-nm" placeholder="f.eks. Regnskap AS"></div>
+        <div class="fg1"><label class="fgl">Bransje</label>
+          <select class="fgs" id="nc-br"><option>Regnskap</option><option>Eiendom</option><option>Helse</option><option>Bygg</option><option>Teknologi</option><option>Juridisk</option><option>Handel</option><option>Annen</option></select>
+        </div>
+      </div>
+      <div class="slbl" style="margin:16px 0 10px;">Innlogging for kunden</div>
+      <div style="background:rgba(47,139,255,.05);border:1px solid rgba(47,139,255,.15);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
+        <div class="fg2" style="margin-bottom:0;">
+          <div class="fg1"><label class="fgl">Kontaktperson *</label><input class="fgi" id="nc-cp" placeholder="Kari Nordmann"></div>
+          <div class="fg1"><label class="fgl">E-post (brukernavn) *</label><input class="fgi" id="nc-em" placeholder="kari@selskap.no" type="email"></div>
+        </div>
+        <div class="fg1" style="margin-bottom:0;">
+          <label class="fgl">Passord</label>
+          <div style="display:flex;gap:7px;align-items:center;">
+            <input class="fgi" id="nc-pw" type="text" placeholder="Auto-generert" style="font-family:'DM Mono',monospace;flex:1;letter-spacing:1px;">
+            <button class="btn btn-gh btn-sm" id="btn-nc-genpw" style="white-space:nowrap;flex-shrink:0;">🔀 Generer</button>
+          </div>
+          <div class="tmn" style="margin-top:4px;">Kunden bruker e-post + dette passordet for å logge inn</div>
+        </div>
+      </div>
+      <div class="slbl" style="margin-bottom:10px;">Avtale</div>
+      <div class="fg2" style="margin-bottom:10px;">
+        <div class="fg1">
+          <label class="fgl">Avtalepris (kr/mnd) *</label>
+          <input class="fgi" id="nc-avtale" type="number" placeholder="f.eks. 12500" min="0" style="font-family:'DM Mono',monospace;">
+          <div class="tmn" style="margin-top:3px;">hva kunden betaler SCS</div>
+        </div>
+        <div class="fg1">
+          <label class="fgl">Estimert besparelse (kr/mnd)</label>
+          <input class="fgi" id="nc-besparing" type="number" placeholder="f.eks. 50000" min="0" style="font-family:'DM Mono',monospace;">
+          <div class="tmn" style="margin-top:3px;">estimert lønnskostnadsbesparelse</div>
+        </div>
+      </div>
+      <div id="nc-roi-preview" style="display:none;background:rgba(0,229,160,.06);border:1px solid rgba(0,229,160,.15);border-radius:10px;padding:12px 16px;gap:20px;font-size:12.5px;margin-bottom:12px;">
+        <div><div class="slbl">ROI</div><div style="font-weight:700;color:var(--g);font-size:16px;" id="nc-roi-val">—</div></div>
+        <div><div class="slbl">Netto til kunden/mnd</div><div style="font-weight:700;color:var(--tx);font-size:16px;" id="nc-netto-val">—</div></div>
+        <div><div class="slbl">Kunden beholder</div><div style="font-weight:700;color:var(--tx);font-size:16px;" id="nc-pct-val">—</div></div>
+      </div>
+      <div class="slbl" style="margin-bottom:7px;">Intern størrelse (vises ikke til kunden)</div>
+      <div style="display:flex;gap:8px;" id="tier-sel">
+        <div class="tsel" data-t="1" style="flex:1;padding:9px 11px;border:1.5px solid var(--t1e);background:var(--t1b);border-radius:9px;text-align:center;cursor:pointer;">
+          <div style="font-weight:700;color:var(--t1);font-size:12px;">⚡ Liten</div>
+          <div class="tmn" style="margin-top:2px;">≤5 agenter</div>
+        </div>
+        <div class="tsel" data-t="2" style="flex:1;padding:9px 11px;border:1.5px solid var(--b2);background:var(--s2);border-radius:9px;text-align:center;cursor:pointer;">
+          <div style="font-weight:700;color:var(--m2);font-size:12px;">🚀 Medium</div>
+          <div class="tmn" style="margin-top:2px;">≤15 agenter</div>
+        </div>
+        <div class="tsel" data-t="3" style="flex:1;padding:9px 11px;border:1.5px solid var(--b2);background:var(--s2);border-radius:9px;text-align:center;cursor:pointer;">
+          <div style="font-weight:700;color:var(--m2);font-size:12px;">🏆 Stor</div>
+          <div class="tmn" style="margin-top:2px;">50+ agenter</div>
+        </div>
+      </div>
+    </div>
+    <div class="mft">
+      <button class="btn btn-gh mo-close">Avbryt</button>
+      <button class="btn btn-g" id="btn-add-client">✅ Opprett klient og bruker</button>
+    </div>
+  </div>
+</div>
+
+<!-- KLIENT OPPRETTET -->
+<div class="mo" id="m-cl-done">
+  <div class="mbox" style="width:min(480px,92vw);">
+    <div class="mhd"><div class="mti">🎉 Klient opprettet!</div><button class="mcl mo-close">✕</button></div>
+    <div class="mbd">
+      <div style="background:rgba(0,229,160,.06);border:1px solid rgba(0,229,160,.2);border-radius:12px;padding:18px;margin-bottom:16px;">
+        <div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:15px;margin-bottom:12px;" id="cl-done-nm">—</div>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:12.5px;align-items:center;">
+          <span class="tmn">E-POST</span>
+          <span id="cl-done-em" style="font-family:'DM Mono',monospace;color:var(--g);">—</span>
+          <span class="tmn">PASSORD</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span id="cl-done-pw" style="font-family:'DM Mono',monospace;font-weight:600;letter-spacing:1px;">—</span>
+            <button class="btn btn-gh btn-sm" id="btn-kopier-tilgang" style="padding:3px 8px;font-size:11px;">📋 Kopier</button>
+          </div>
+          <span class="tmn">AVTALE</span>
+          <span id="cl-done-tier" style="font-weight:600;">—</span>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--m2);line-height:1.6;">Send kunden e-post + passord over sikker kanal. De kan logge inn umiddelbart.</div>
+    </div>
+    <div class="mft" style="justify-content:space-between;">
+      <button class="btn btn-gh btn-sm" id="btn-kopier-velkost">📧 Kopier velkomsttekst</button>
+      <button class="btn btn-g" id="btn-goto-kl">Gå til klientliste →</button>
+    </div>
+  </div>
+</div>
+
+<!-- INVITER BRUKER -->
+<div class="mo" id="m-invuser">
+  <div class="mbox">
+    <div class="mhd"><div class="mti">👤 Inviter bruker</div><button class="mcl mo-close">✕</button></div>
+    <div class="mbd">
+      <div class="fg2">
+        <div class="fg1"><label class="fgl">Navn *</label><input class="fgi" id="inv-nm" placeholder="Kari Nordmann"></div>
+        <div class="fg1"><label class="fgl">E-post *</label><input class="fgi" id="inv-em" placeholder="kari@selskap.no" type="email"></div>
+      </div>
+      <div style="background:rgba(47,139,255,.06);border:1px solid rgba(47,139,255,.15);border-radius:9px;padding:11px;font-size:12px;color:var(--m2);">📧 Brukeren mottar en e-post med innloggingsinstruksjoner.</div>
+    </div>
+    <div class="mft">
+      <button class="btn btn-gh mo-close">Avbryt</button>
+      <button class="btn btn-g" id="btn-do-inviter">📧 Send invitasjon</button>
+    </div>
+  </div>
+</div>
+
+<!-- KAPASITET FULL (client) -->
+<div class="mo" id="m-upgrade">
+  <div class="mbox">
+    <div class="mhd"><div class="mti">➕ Be om flere agenter</div><button class="mcl mo-close">✕</button></div>
+    <div class="mbd">
+      <div style="background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.2);border-radius:10px;padding:14px;margin-bottom:18px;">
+        <div style="font-weight:700;color:var(--g);margin-bottom:5px;">Send forespørsel til SCS</div>
+        <div style="font-size:12.5px;color:var(--m2);">SCS vil se forespørselen din og ta kontakt for å utvide avtalen.</div>
+      </div>
+      <div class="fg1"><label class="fgl">Antall agenter du ønsker</label><input class="fgi" id="upg-antall" type="number" min="1" max="20" placeholder="f.eks. 3" style="width:100%;"></div>
+      <div class="fg1" style="margin-top:10px;"><label class="fgl">Hva skal agentene gjøre? (valgfritt)</label><textarea class="fgt" id="upg-msg" placeholder="Beskriv behovet ditt..." style="height:80px;"></textarea></div>
+    </div>
+    <div class="mft">
+      <button class="btn btn-gh mo-close">Avbryt</button>
+      <button class="btn btn-g" id="upg-send-btn">➕ Send forespørsel</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- GLEMT PASSORD -->
+<div class="mo" id="m-glemt-pw">
+  <div class="mbox">
+    <div class="mhd"><div class="mti">🔐 Glemt passord</div><button class="mcl mo-close">✕</button></div>
+    <div class="mbd">
+      <div style="background:rgba(47,139,255,.06);border:1px solid rgba(47,139,255,.15);border-radius:10px;padding:14px;margin-bottom:14px;font-size:12.5px;color:var(--m2);line-height:1.6;">
+        Kontakt SCS-teamet for å tilbakestille passordet ditt. Vi kan ikke sende automatisk tilbakestilling i demo-modus.
+      </div>
+      <div class="fg1"><label class="fgl">Din e-post</label><input class="fgi" id="forgot-em" placeholder="din@email.no" type="email"></div>
+    </div>
+    <div class="mft">
+      <button class="btn btn-gh mo-close">Lukk</button>
+      <button class="btn btn-b" id="btn-forgot-send">📧 Send forespørsel</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════ JS ══════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ╔═══════════════════════════════════════════════════════════════
+   ║  SUPABASE CONFIG
+   ╚═══════════════════════════════════════════════════════════════ */
+const SB_CONFIG = { url: '', anonKey: '' };
+
+const SB = {
+  _h() { return { 'Content-Type': 'application/json', 'apikey': SB_CONFIG.anonKey, 'Authorization': 'Bearer ' + SB_CONFIG.anonKey }; },
+  _enabled() { return !!(SB_CONFIG.url && SB_CONFIG.anonKey); },
+  async select(table, params = {}) {
+    if (!this._enabled()) return null;
+    const qs = new URLSearchParams({ select: params.select || '*', ...(params.filter || {}), order: params.order || 'timestamp.desc', limit: params.limit || 100 });
+    try {
+      const r = await fetch(`${SB_CONFIG.url}/rest/v1/${table}?${qs}`, { headers: { ...this._h(), Prefer: 'return=representation' } });
+      return r.ok ? r.json() : null;
+    } catch { return null; }
+  },
+  async rpc(fn, body = {}) {
+    if (!this._enabled()) return null;
+    try {
+      const r = await fetch(`${SB_CONFIG.url}/rest/v1/rpc/${fn}`, { method: 'POST', headers: this._h(), body: JSON.stringify(body) });
+      return r.ok ? r.json() : null;
+    } catch { return null; }
+  }
+};
+
+/* ╔═══════════════════════════════════════════════════════════════
+   ║  DATA
+   ╚═══════════════════════════════════════════════════════════════ */
+const USERS = {
+  [atob('YWRtaW5Ac2ltcGx5Y29tcGxleC5ubw==')]: { pass:'admin123', role:'admin', name:'Eido' },
+  [atob('a3VuZGVAcmVnbnNrYXBjbGllbnQubm8=')]: {
+    pass:'klient123', role:'client', company:'Regnskap AS', tier:2, icon:'🏢', color:'#2f8bff',
+    agentIdx:[0,2], stats:{ actions:412, leads:14, voices:0 },
+    avtaleKr:11900, besparingKr:52000, timeSaved:68, apiKostKr:1840, apiGrenseKr:2500, contact:'Kari Holm',
+    keyOpenAI:'', keyVapi:'', keyElevenLabs:'', keyTwilioSid:'', keyTwilioToken:'', keyHubspot:'',
+    n8nUrl:'', webhookUrl:'', voiceProvider:'VAPI', generalKnowledge:''
+  },
+  [atob('a29udGFrdEBlaWVuZG9tbm9yZC5ubw==')]: {
+    pass:'klient123', role:'client', company:'Eiendom Nord', tier:1, icon:'🏡', color:'#00e5a0',
+    agentIdx:[1,3,4,5,6], stats:{ actions:58, leads:3, voices:58 },
+    avtaleKr:8500, besparingKr:31000, timeSaved:42, apiKostKr:3120, apiGrenseKr:2500, contact:'Lars Berg',
+    keyOpenAI:'', keyVapi:'', keyElevenLabs:'', keyTwilioSid:'', keyTwilioToken:'', keyHubspot:'',
+    n8nUrl:'', webhookUrl:'', voiceProvider:'ElevenLabs', generalKnowledge:''
+  },
+  [atob('YWRtaW5AdGVjaHNvbHV0aW9ucy5ubw==')]: {
+    pass:'klient123', role:'client', company:'Tech Solutions', tier:3, icon:'💻', color:'#f59e0b',
+    agentIdx:[7,8,9], stats:{ actions:1842, leads:30, voices:14 },
+    avtaleKr:34000, besparingKr:198000, timeSaved:310, apiKostKr:8950, apiGrenseKr:9500, contact:'Hege Larsen',
+    keyOpenAI:'', keyVapi:'', keyElevenLabs:'', keyTwilioSid:'', keyTwilioToken:'', keyHubspot:'',
+    n8nUrl:'', webhookUrl:'', voiceProvider:'VAPI', generalKnowledge:''
+  }
+};
+
+const TIER_CFG = {
+  1: { name:'Liten',  max:5,  icon:'⚡', color:'var(--t1)' },
+  2: { name:'Medium', max:10, icon:'🚀', color:'var(--t2)' },
+  3: { name:'Stor',   max:20, icon:'🏆', color:'var(--t3)' },
+};
+
+let DEMO_MODE = false;
+let CLIENTS = [];
+const CLIENTS_DEMO = [
+  { n:'Regnskap AS',    b:'Regnskap',    t:2, ag:2, act:1189, avtale:11900, besparing:52000,  apiKost:1840,  apiGrense:2500, s:'aktiv', av:'R', c:'#2f8bff', agentIdx:[0,2], voiceProvider:'VAPI', webhook:'' },
+  { n:'Eiendom Nord',   b:'Eiendom',     t:1, ag:5, act:132,  avtale:8500,  besparing:31000,  apiKost:3120,  apiGrense:2500, s:'aktiv', av:'E', c:'#00e5a0', agentIdx:[1,3,4,5,6], voiceProvider:'ElevenLabs', webhook:'' },
+  { n:'Tech Solutions', b:'Teknologi',   t:3, ag:3, act:2775, avtale:34000, besparing:198000, apiKost:8950,  apiGrense:9500, s:'aktiv', av:'T', c:'#f59e0b', agentIdx:[7,8,9], voiceProvider:'VAPI', webhook:'' },
+  { n:'Handel Butikk',  b:'Detaljhandel',t:1, ag:1, act:88,   avtale:7200,  besparing:24000,  apiKost:680,   apiGrense:1500, s:'aktiv', av:'H', c:'#ff6b35' },
+  { n:'Juss Partners',  b:'Juridisk',    t:2, ag:3, act:340,  avtale:18500, besparing:74000,  apiKost:2100,  apiGrense:3000, s:'aktiv', av:'J', c:'#9d60fb' },
+  { n:'Klinikk Vest',   b:'Helse',       t:1, ag:2, act:190,  avtale:6800,  besparing:19500,  apiKost:920,   apiGrense:1500, s:'aktiv', av:'K', c:'#00e5a0' },
+  { n:'Finans Nord',    b:'Finans',      t:2, ag:4, act:560,  avtale:22000, besparing:89000,  apiKost:4200,  apiGrense:4000, s:'aktiv', av:'F', c:'#2f8bff' },
+  { n:'Logistikk AS',   b:'Transport',   t:1, ag:1, act:67,   avtale:5500,  besparing:14000,  apiKost:440,   apiGrense:1000, s:'aktiv', av:'L', c:'#ff6b35' },
+  { n:'Media Group',    b:'Media',       t:2, ag:5, act:445,  avtale:15000, besparing:55000,  apiKost:1750,  apiGrense:2500, s:'aktiv', av:'M', c:'#9d60fb' },
+  { n:'Hotell Nord',    b:'Reiseliv',    t:1, ag:2, act:144,  avtale:9200,  besparing:27000,  apiKost:1100,  apiGrense:2000, s:'aktiv', av:'H', c:'#f59e0b' },
+  { n:'Startup Lab',    b:'Teknologi',   t:1, ag:1, act:44,   avtale:4800,  besparing:12000,  apiKost:310,   apiGrense:800,  s:'aktiv', av:'S', c:'#00e5a0' },
+  { n:'Bygg Sør AS',    b:'Bygg',        t:2, ag:4, act:290,  avtale:9900,  besparing:32000,  apiKost:850,   apiGrense:2000, s:'aktiv', av:'B', c:'#ff6b35' },
+];
+
+const AGENTS = [
+  { nm:'Email Support',  em:'📬', bg:'rgba(0,229,160,0.1)',   ch:'Gmail · HubSpot',      act:412,  rate:96, status:'aktiv', klient:'Regnskap AS', tone:'Profesjonell', greeting:'', knowledge:'', clientKnowledge:'', clientFeedback:'', webhook:'', voiceName:'Sofia' },
+  { nm:'Voice Agent',    em:'📞', bg:'rgba(47,139,255,0.1)',  ch:'VAPI · HubSpot',       act:58,   rate:91, status:'aktiv', klient:'Eiendom Nord', tone:'Vennlig', greeting:'Hei! Du har ringt Eiendom Nord.', knowledge:'', clientKnowledge:'', clientFeedback:'', webhook:'', voiceName:'Sofia' },
+  { nm:'Lead Capture',   em:'🎯', bg:'rgba(255,107,53,0.1)',  ch:'Email · CRM',          act:777,  rate:88, status:'aktiv', klient:'Regnskap AS', tone:'Profesjonell', greeting:'', knowledge:'', clientKnowledge:'', clientFeedback:'', webhook:'', voiceName:'Sofia' },
+  { nm:'Booking Bot',    em:'📅', bg:'rgba(157,96,251,0.1)',  ch:'Website · Email',      act:22,   rate:93, status:'aktiv', klient:'Eiendom Nord', tone:'Vennlig', greeting:'', knowledge:'', clientKnowledge:'', clientFeedback:'', webhook:'', voiceName:'Sofia' },
+  { nm:'Social Agent',   em:'📱', bg:'rgba(245,158,11,0.1)',  ch:'Instagram · FB',       act:14,   rate:85, status:'aktiv', klient:'Eiendom Nord', tone:'Uformell', greeting:'', knowledge:'', clientKnowledge:'', clientFeedback:'', webhook:'', voiceName:'Sofia' },
+  { nm:'CRM Sync',       em:'🏢', bg:'rgba(0,229,160,0.1)',   ch:'HubSpot',              act:31,   rate:99, status:'aktiv', klient:'Eiendom Nord', tone:'Teknisk', greeting:'', knowledge:'', clientKnowledge:'', clientFeedback:'', webhook:'', voiceName:'Sofia' },
+  { nm:'Review Bot',     em:'⭐', bg:'rgba(47,139,255,0.1)',  ch:'Google · Trustpilot',  act:7,    rate:100, status:'aktiv', klient:'Eiendom Nord', tone:'Vennlig', greeting:'', knowledge:'', clientKnowledge:'', clientFeedback:'', webhook:'', voiceName:'Sofia' },
+  { nm:'Enterprise AI',  em:'⚡', bg:'rgba(245,158,11,0.1)',  ch:'Multi-kanal',          act:1842, rate:97, status:'aktiv', klient:'Tech Solutions', tone:'Profesjonell', greeting:'', knowledge:'', clientKnowledge:'', clientFeedback:'', webhook:'', voiceName:'Sofia' },
+  { nm:'API Agent',      em:'🔗', bg:'rgba(157,96,251,0.1)',  ch:'REST · Webhook',       act:621,  rate:99, status:'aktiv', klient:'Tech Solutions', tone:'Teknisk', greeting:'', knowledge:'', clientKnowledge:'', clientFeedback:'', webhook:'', voiceName:'Sofia' },
+  { nm:'Data Enricher',  em:'📊', bg:'rgba(255,107,53,0.1)',  ch:'CRM · DB',             act:312,  rate:95, status:'aktiv', klient:'Tech Solutions', tone:'Profesjonell', greeting:'', knowledge:'', clientKnowledge:'', clientFeedback:'', webhook:'', voiceName:'Sofia' },
+];
+
+const ACT_T = [
+  { ic:'📬', bg:'rgba(0,229,160,0.1)',   msg: co => `<strong>${co}</strong> svarte automatisk på e-post` },
+  { ic:'🎯', bg:'rgba(255,107,53,0.1)',  msg: _  => `<strong>Ny lead</strong> fanget og registrert i CRM` },
+  { ic:'📞', bg:'rgba(47,139,255,0.1)',  msg: _  => `<strong>Voice</strong> fullførte kundesamtale` },
+  { ic:'🏢', bg:'rgba(157,96,251,0.1)',  msg: _  => `<strong>CRM</strong> oppdatert — ny kontakt lagt til` },
+  { ic:'⭐', bg:'rgba(245,158,11,0.1)',  msg: _  => `<strong>Anmeldelse</strong> svart på automatisk` },
+];
+const LOG_T = [
+  { l:'OK',   c:'lok', a:'email-support', m:'E-post besvart automatisk — 1.1s' },
+  { l:'OK',   c:'lok', a:'lead-capture',  m:'Ny lead lagret i HubSpot CRM' },
+  { l:'INFO', c:'lin', a:'voice-agent',   m:'Samtale avsluttet — 3m 02s' },
+  { l:'OK',   c:'lok', a:'system',        m:'Gmail synkronisert — 12 nye meldinger' },
+  { l:'WARN', c:'lwa', a:'email-support', m:'Eskalering utløst — kundehenvendelse' },
+  { l:'OK',   c:'lok', a:'crm-sync',      m:'HubSpot kontakter oppdatert' },
+];
+
+/* ╔═══════════════════════════════════════════════════════════════
+   ║  STATE
+   ╚═══════════════════════════════════════════════════════════════ */
+let CU = null;
+let loginRole = 'admin';
+let selTier = 1;
+let rtA = null, rtC = null;
+let _lastClient = {};
+
+/* ╔═══════════════════════════════════════════════════════════════
+   ║  UTILS
+   ╚═══════════════════════════════════════════════════════════════ */
+function el(id) { return document.getElementById(id); }
+
+function animV(id, val) {
+  const e = el(id);
+  if (!e) return;
+  e.classList.remove('anim-v');
+  void e.offsetWidth;
+  e.classList.add('anim-v');
+  e.textContent = val;
+}
+
+function liveV(id, val) {
+  const e = el(id);
+  if (e) e.textContent = val;
+}
+
+function toast(msg, type = 'ok') {
+  const color = { ok: 'var(--g)', err: 'var(--er)', warn: 'var(--wa)', info: 'var(--b1)' }[type] || 'var(--g)';
+  const t = document.createElement('div');
+  t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 20px;background:var(--s2);border:1px solid ${color};border-radius:10px;color:${color};font-family:'DM Mono',monospace;font-size:12px;pointer-events:none;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:fadeIn 0.2s ease;`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.transition = 'opacity .3s'; t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 2400);
+}
+
+function buildChart(id, color, vals) {
+  const e = el(id);
+  if (!e) return;
+  e.innerHTML = '';
+  const mx = Math.max(...vals, 1);
+  vals.forEach((v, i) => {
+    const b = document.createElement('div');
+    b.className = 'mcb';
+    b.style.cssText = `height:${Math.max(v / mx * 100, 6)}%;background:${color};opacity:${i === vals.length - 1 ? '0.9' : '0.35'};`;
+    e.appendChild(b);
+  });
+}
+
+function openModal(id) {
+  const m = el(id);
+  if (m) m.classList.add('on');
+}
+function closeModal(id) {
+  const m = el(id);
+  if (m) m.classList.remove('on');
+}
+
+function clearAllRT() {
+  clearInterval(rtA);
+  clearInterval(rtC);
+  rtA = rtC = null;
+}
+
+function fmtKr(n) { return Math.round(n).toLocaleString('no-NO') + ' kr'; }
+function fmtKrK(n) { return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : fmtKr(n); }
+
+/* ╔═══════════════════════════════════════════════════════════════
+   ║  NAVIGATION
+   ╚═══════════════════════════════════════════════════════════════ */
+function aGo(pageId) {
+  document.querySelectorAll('#v-admin .pg').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.ani').forEach(n => n.classList.remove('on'));
+  const p = el('pg-' + pageId);
+  if (p) p.classList.add('on');
+  const navItem = document.querySelector(`.ani[data-page="${pageId}"]`);
+  if (navItem) navItem.classList.add('on');
+}
+
+function cGo(pageId) {
+  document.querySelectorAll('.cpg').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.cni').forEach(n => n.classList.remove('on'));
+  const p = el('cpg-' + pageId);
+  if (p) p.classList.add('on');
+  const navItem = document.querySelector(`.cni[data-cpage="${pageId}"]`);
+  if (navItem) navItem.classList.add('on');
+}
+
+/* ╔═══════════════════════════════════════════════════════════════
+   ║  CLOCK
+   ╚═══════════════════════════════════════════════════════════════ */
+function tickClock() {
+  const t = new Date().toLocaleTimeString('no-NO');
+  const a = el('a-clk'), c = el('c-clk');
+  if (a) a.textContent = t;
+  if (c) c.textContent = t;
+}
+setInterval(tickClock, 1000);
+tickClock();
+
+/* ╔═══════════════════════════════════════════════════════════════
+   ║  AUTH
+   ╚═══════════════════════════════════════════════════════════════ */
+function doLogin() {
+  const email = el('lin-em').value.trim().toLowerCase();
+  const pw = el('lin-pw').value;
+  const errEl = el('lerr');
+  errEl.classList.remove('on');
+  const u = USERS[email];
+  if (!u || u.pass !== pw) { errEl.classList.add('on'); return; }
+  CU = { ...u, email };
+  CLIENTS.length = 0;
+  if (DEMO_MODE) CLIENTS_DEMO.forEach(c => CLIENTS.push(c));
+  el('v-login').classList.remove('on');
+  if (CU.role === 'admin') {
+    el('v-admin').classList.add('on');
+    bootAdmin();
+  } else {
+    el('v-client').classList.add('on');
+    bootClient();
+  }
+}
+
+function logout() {
+  CU = null;
+  DEMO_MODE = false;
+  CLIENTS.length = 0;
+  clearAllRT();
+  el('v-admin').classList.remove('on');
+  el('v-client').classList.remove('on');
+  el('v-login').classList.add('on');
+  el('lin-em').value = '';
+  el('lin-pw').value = '';
+}
+
+/* ╔═══════════════════════════════════════════════════════════════
+   ║  ADMIN BOOT
+   ╚═══════════════════════════════════════════════════════════════ */
+async function bootAdmin() {
+  el('a-av').textContent = CU.name[0];
+  el('a-uname').textContent = CU.name;
+  setConnBadge(false);
+
+  const live = SB._enabled() ? await fetchLiveData() : false;
+  if (!live) initAdminCharts();
+  renderAdminFeed();
+  renderLogFeed();
+  renderAgentCards();
+  renderClientsTable();
+  renderUsersTable();
+  renderAvtaleTabell();
+  renderApiKostnader();
+  renderFakturering();
+  updateAdminStats();
+
+  clearAllRT();
+  rtA = setInterval(() => {
+    CLIENTS.forEach(cl => { cl.act += Math.floor(Math.random() * 4); });
+    AGENTS.forEach(a => { a.act += Math.floor(Math.random() * 2); });
+    updateAdminStatsLive();
+    if (Math.random() > 0.6) pushAdminFeed();
+    if (Math.random() > 0.7) pushLog();
+  }, 8000);
+}
+
+function setConnBadge(live) {
+  const badge = el('conn-badge');
+  if (!badge) return;
+  badge.textContent = live ? '● Supabase Live' : '◎ Demo-modus';
+  const sb = badge.closest('.asb-mode');
+  if (sb) sb.style.color = live ? 'var(--g)' : 'var(--mu)';
+}
+
+async function fetchLiveData() {
+  const summary = await SB.select('v_today_summary');
+  if (!summary) return false;
+  setConnBadge(true);
+  return true;
+}
+
+function updateAdminStats() {
+  const totalMRR       = CLIENTS.reduce((s, cl) => s + (cl.avtale || 0), 0);
+  const totalBesparing = CLIENTS.reduce((s, cl) => s + (cl.besparing || 0), 0);
+  const totalAct       = CLIENTS.reduce((s, cl) => s + (cl.act || 0), 0);
+  const avgROI         = CLIENTS.length ? (CLIENTS.reduce((s, cl) => s + (cl.besparing || 0) / (cl.avtale || 1), 0) / CLIENTS.length).toFixed(1) : 0;
+  const totAg          = AGENTS.length;
+
+  animV('adb-act',    totalAct.toLocaleString('no-NO'));
+  animV('adb-leads',  Math.floor(totalAct * 0.034));
+  animV('adb-cl',     CLIENTS.length);
+  animV('adb-ag',     totAg);
+  animV('adb-em',     AGENTS[0]?.act.toLocaleString('no-NO') || 0);
+  animV('adb-vo',     AGENTS[1]?.act.toLocaleString('no-NO') || 0);
+  animV('adb-lc',     Math.floor(totalAct * 0.034));
+  animV('aa1',        AGENTS[0]?.act.toLocaleString('no-NO') || 0);
+  animV('aa2',        AGENTS[1]?.act.toLocaleString('no-NO') || 0);
+  animV('aa3',        AGENTS[2]?.act.toLocaleString('no-NO') || 0);
+  animV('aa4',        AGENTS[7]?.act.toLocaleString('no-NO') || 0);
+
+  animV('kl-mrr',     fmtKrK(totalMRR));
+  animV('kl-tot',     CLIENTS.length);
+  animV('kl-ag',      totAg);
+
+  animV('roi-h',      Math.round(totalMRR * 0.68 / 600) + 't');
+  animV('roi-s',      fmtKr(totalBesparing));
+  animV('roi-mrr',    fmtKr(totalMRR));
+  animV('roi-n',      fmtKr(totalBesparing - totalMRR));
+
+  // Avtaler page
+  animV('av-mrr',      fmtKr(totalMRR));
+  animV('av-besparing', fmtKrK(totalBesparing));
+  animV('av-roi',      avgROI + 'x');
+  animV('av-antall',  CLIENTS.length);
+
+  // Settings
+  const admMrr = el('adm-mrr-set');
+  if (admMrr) admMrr.textContent = fmtKr(totalMRR);
+  const admRoi = el('adm-avg-roi-set');
+  if (admRoi) admRoi.textContent = avgROI + 'x';
+
+  // Agenter page
+  animV('adm-tot-besparing', fmtKr(totalBesparing));
+  animV('ag-tot', totalAct.toLocaleString('no-NO'));
+
+  // Fakturering
+  animV('fak-mrr', fmtKr(totalMRR));
+  animV('fak-arr', (totalMRR * 12 >= 1000000 ? (totalMRR * 12 / 1000000).toFixed(2) + 'M' : fmtKrK(totalMRR * 12)));
+
+  // Klienter maxed
+  const maxed = CLIENTS.filter(cl => cl.ag >= TIER_CFG[cl.t]?.max).length;
+  animV('kl-max', maxed);
+
+  renderAvtaleTabell();
+  renderApiKostnader();
+  renderClientsTable();
+}
+
+function updateAdminStatsLive() {
+  const totalMRR       = CLIENTS.reduce((s, cl) => s + (cl.avtale || 0), 0);
+  const totalBesparing = CLIENTS.reduce((s, cl) => s + (cl.besparing || 0), 0);
+  const totalAct       = CLIENTS.reduce((s, cl) => s + (cl.act || 0), 0);
+  const totAg          = AGENTS.length;
+
+  liveV('adb-act',    totalAct.toLocaleString('no-NO'));
+  liveV('adb-leads',  Math.floor(totalAct * 0.034));
+  liveV('adb-cl',     CLIENTS.length);
+  liveV('adb-ag',     totAg);
+  liveV('adb-em',     AGENTS[0]?.act.toLocaleString('no-NO') || 0);
+  liveV('adb-vo',     AGENTS[1]?.act.toLocaleString('no-NO') || 0);
+  liveV('adb-lc',     Math.floor(totalAct * 0.034));
+  liveV('aa1',        AGENTS[0]?.act.toLocaleString('no-NO') || 0);
+  liveV('aa2',        AGENTS[1]?.act.toLocaleString('no-NO') || 0);
+  liveV('aa3',        AGENTS[2]?.act.toLocaleString('no-NO') || 0);
+  liveV('aa4',        AGENTS[7]?.act.toLocaleString('no-NO') || 0);
+  liveV('ag-tot',     totalAct.toLocaleString('no-NO'));
+}
+
+/* ── CHARTS ── */
+function initAdminCharts() {
+  buildChart('adb-emc', '#00e5a0', [280,310,290,350,320,380,412]);
+  buildChart('adb-vmc', '#2f8bff', [38,45,40,52,47,54,58]);
+  buildChart('adb-lmc', '#ff6b35', [28,34,30,40,36,42,47]);
+}
+
+/* ── FEEDS ── */
+function renderAdminFeed() {
+  const feed = el('a-feed');
+  if (!feed) return;
+  feed.innerHTML = '';
+  for (let i = 0; i < 5; i++) pushAdminFeed(false);
+}
+function pushAdminFeed(flash = true) {
+  const feed = el('a-feed');
+  if (!feed) return;
+  const t = ACT_T[Math.floor(Math.random() * ACT_T.length)];
+  const cl = CLIENTS[Math.floor(Math.random() * CLIENTS.length)];
+  const now = new Date().toLocaleTimeString('no-NO');
+  const d = document.createElement('div');
+  d.className = 'ai' + (flash ? ' fn' : '');
+  d.innerHTML = `<div class="aic" style="background:${t.bg}">${t.ic}</div><div><div style="font-size:12px;">${t.msg(cl.n)}</div><div style="font-size:10px;color:var(--mu);font-family:'DM Mono',monospace;margin-top:1px;">${now} · ${cl.n}</div></div>`;
+  feed.insertBefore(d, feed.firstChild);
+  while (feed.children.length > 6) feed.removeChild(feed.lastChild);
+}
+
+function renderLogFeed() {
+  const feed = el('log-feed');
+  if (!feed) return;
+  feed.innerHTML = '';
+  for (let i = 0; i < 10; i++) pushLog(false);
+}
+function pushLog(flash = true) {
+  const feed = el('log-feed');
+  if (!feed) return;
+  const t = LOG_T[Math.floor(Math.random() * LOG_T.length)];
+  const now = new Date().toLocaleString('no-NO');
+  const e = document.createElement('div');
+  e.className = 'loge' + (flash ? ' fn' : '');
+  e.innerHTML = `<div class="lt">${now}</div><div class="ll ${t.c}">${t.l}</div><div class="tmn" style="width:110px;flex-shrink:0;">${t.a}</div><div style="flex:1;font-size:10.5px;">${t.m}</div>`;
+  feed.insertBefore(e, feed.firstChild);
+  while (feed.children.length > 14) feed.removeChild(feed.lastChild);
+}
+
+/* ── AGENT CARDS ── */
+function renderAgentCards() {
+  const g = el('ag-cards');
+  if (!g) return;
+  g.innerHTML = '';
+  AGENTS.slice(0, 4).forEach((a, i) => {
+    const rc = a.rate >= 90 ? 'var(--g)' : a.rate >= 80 ? 'var(--o)' : 'var(--er)';
+    const d = document.createElement('div');
+    d.className = 'card';
+    d.style.padding = '17px';
+    d.innerHTML = `
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:9px;background:${a.bg};display:flex;align-items:center;justify-content:center;font-size:16px;">${a.em}</div>
+          <div><div style="font-weight:700;font-size:13px;">${a.nm}</div><div class="tmn" style="margin-top:2px;">${a.ch}</div></div>
+        </div>
+        <span class="bge ${a.status === 'aktiv' ? 'ba' : 'bp'}">${a.status.toUpperCase()}</span>
+      </div>
+      <div style="display:flex;gap:14px;border-top:1px solid var(--b);padding-top:11px;margin-bottom:11px;">
+        <div><div style="font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:19px;" id="agc-${i}">${a.act.toLocaleString('no-NO')}</div><div class="tmn">Handlinger</div></div>
+        <div><div style="font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:16px;color:${rc};">${a.rate}%</div><div class="tmn">Suksessrate</div></div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-gh btn-sm ag-pause-btn">⏸ Pause</button>
+        <button class="btn btn-gh btn-sm ag-edit-btn">✏️ Rediger</button>
+      </div>`;
+    const pauseBtn = d.querySelector('.ag-pause-btn');
+    pauseBtn.addEventListener('click', () => {
+      if (a.status === 'aktiv') { a.status = 'pause'; pauseBtn.textContent = '▶ Fortsett'; toast(a.nm + ' satt på pause', 'warn'); }
+      else { a.status = 'aktiv'; pauseBtn.textContent = '⏸ Pause'; toast(a.nm + ' gjenopptatt ✓'); }
+      d.querySelector('.bge').textContent = a.status === 'aktiv' ? 'AKTIV' : 'PAUSE';
+      d.querySelector('.bge').className = 'bge ' + (a.status === 'aktiv' ? 'ba' : 'bp');
+    });
+    d.querySelector('.ag-edit-btn').addEventListener('click', () => {
+      openDynModal('m-edit-agent', `<div class="mhd"><div class="mti">✏️ Rediger agent</div><button class="mcl mo-close">✕</button></div>
+        <div class="mbd"><div class="fg1"><label class="fgl">Navn</label><input class="fgi" id="ea-nm" value="${a.nm}"></div>
+        <div class="fg1"><label class="fgl">Kanal</label><input class="fgi" id="ea-ch" value="${a.ch}"></div></div>
+        <div class="mft"><button class="btn btn-gh mo-close">Avbryt</button>
+        <button class="btn btn-g mo-close" id="ea-save">💾 Lagre</button></div>`);
+      el('ea-save').addEventListener('click', () => {
+        a.nm = el('ea-nm').value || a.nm;
+        a.ch = el('ea-ch').value || a.ch;
+        renderAgentCards();
+        toast('Agent oppdatert ✓');
+      });
+    });
+    g.appendChild(d);
+  });
+}
+
+/* ── CLIENTS TABLE ── */
+function renderClientsTable(filt = '', tier = '') {
+  const tb = el('cl-tbody');
+  if (!tb) return;
+  const tn = { 1:'⚡ Liten', 2:'🚀 Medium', 3:'🏆 Stor' };
+  const filtered = CLIENTS.filter(cl => {
+    if (filt && !cl.n.toLowerCase().includes(filt.toLowerCase()) && !cl.b.toLowerCase().includes(filt.toLowerCase())) return false;
+    if (tier && cl.t !== parseInt(tier)) return false;
+    return true;
+  });
+  tb.innerHTML = filtered.map(cl => {
+    const roi = cl.avtale ? (cl.besparing / cl.avtale).toFixed(1) : '—';
+    const roiColor = roi >= 4 ? 'var(--g)' : roi >= 3 ? 'var(--au)' : 'var(--m2)';
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:9px;">
+        <div class="av" style="background:${cl.c}22;color:${cl.c};">${cl.av}</div>
+        <div><div style="font-weight:600;">${cl.n}</div><div class="tmn">${cl.b}</div></div>
+      </div></td>
+      <td><span class="bge" style="font-size:9.5px;">${tn[cl.t] || '—'}</span></td>
+      <td class="tmn">${cl.ag}</td>
+      <td class="tmn">${(cl.act || 0).toLocaleString('no-NO')}</td>
+      <td style="font-family:'DM Mono',monospace;font-weight:700;">${fmtKr(cl.avtale)}</td>
+      <td style="font-family:'DM Mono',monospace;color:var(--g);font-weight:600;">${fmtKr(cl.besparing)}</td>
+      <td style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:14px;color:${roiColor};">${roi}x</td>
+      <td><span class="bge ${cl.s === 'aktiv' ? 'ba' : 'bp'}">${cl.s.toUpperCase()}</span></td>
+      <td><button class="btn btn-gh btn-sm cl-det-btn" data-idx="${CLIENTS.indexOf(cl)}">Detaljer</button></td>
+    </tr>`;
+  }).join('');
+  tb.querySelectorAll('.cl-det-btn').forEach(btn => {
+    btn.addEventListener('click', () => visKlientDetaljer(CLIENTS[parseInt(btn.dataset.idx)]));
+  });
+}
+
+function visKlientDetaljer(cl) {
+  const roi = cl.avtale ? (cl.besparing / cl.avtale).toFixed(1) : '—';
+  const tn = { 1:'⚡ Liten', 2:'🚀 Medium', 3:'🏆 Stor' };
+  const s = cl.s || 'aktiv';
+  const statusLabel = s === 'aktiv' ? '✅ Aktiv' : s === 'pause' ? '⏸ Pause' : '📦 Arkivert';
+  const statusColor = s === 'aktiv' ? 'var(--g)' : s === 'pause' ? 'var(--wa)' : 'var(--mu)';
+
+  // Build agent knowledge blocks
+  const agenter = (cl.agentIdx||[]).map(i => AGENTS[i]).filter(Boolean);
+  const agKnowHtml = agenter.length
+    ? agenter.map((a, ai) => {
+        const idx = cl.agentIdx[ai];
+        const tones = ['Profesjonell','Vennlig','Uformell','Teknisk'].map(t =>
+          '<option' + ((a.tone||'Profesjonell')===t?' selected':'') + '>' + t + '</option>').join('');
+        return '<div style="border:1px solid var(--b2);border-radius:10px;padding:12px;margin-bottom:10px;">'
+          + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'
+          + '<span style="font-size:14px;">' + (a.em||'🤖') + '</span>'
+          + '<div style="flex:1;font-weight:700;font-size:12.5px;">' + a.nm + '</div>'
+          + '<select class="fgs adm-ag-status" data-idx="' + idx + '" style="font-size:11px;width:auto;padding:3px 7px;">'
+          + '<option' + (a.status==='aktiv'?' selected':'') + ' value="aktiv">✅ Aktiv</option>'
+          + '<option' + (a.status==='pause'?' selected':'') + ' value="pause">⏸ Pause</option>'
+          + '</select>'
+          + '</div>'
+          + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">'
+          + '<div><label class="fgl" style="margin-bottom:3px;">Tone</label>'
+          + '<select class="fgs adm-ag-tone" data-idx="' + idx + '" style="font-size:11px;">' + tones + '</select></div>'
+          + '<div><label class="fgl" style="margin-bottom:3px;">Åpningshilsen</label>'
+          + '<input class="fgi adm-ag-greeting" data-idx="' + idx + '" value="' + (a.greeting||'').replace(/"/g,'&quot;') + '" placeholder="Hei! Takk for at du kontaktet oss." style="font-size:11px;"></div>'
+          + '</div>'
+          + '<div><label class="fgl" style="margin-bottom:3px;">📚 Agent-kunnskap <span style="font-weight:400;color:var(--mu);">(kun admin)</span></label>'
+          + '<textarea class="fgt adm-ag-know" data-idx="' + idx + '" style="height:100px;font-size:12px;width:100%;" placeholder="Produktinfo, priser, FAQ, rutiner, svarmal osv.">'
+          + (a.knowledge||'') + '</textarea></div>'
+          + '<div style="margin-top:8px;"><label class="fgl" style="margin-bottom:3px;">🔗 Webhook URL (n8n)</label>'
+          + '<input class="fgi adm-ag-webhook" data-idx="' + idx + '" value="' + (a.webhook||'') + '" placeholder="https://n8n.../webhook/..." style="font-size:11px;width:100%;font-family:monospace;"></div>'
+          + '</div>';
+      }).join('')
+    : '<div style="color:var(--mu);font-size:12px;padding:8px 0;">Ingen agenter tilordnet ennå.</div>';
+
+  const html = `<div class="mhd">
+    <div class="mti" style="display:flex;align-items:center;gap:10px;">
+      <span style="font-size:20px;">${cl.av||'🏢'}</span>
+      <div>
+        <div>${cl.n}</div>
+        <div style="font-size:12px;font-weight:400;color:${statusColor};">${statusLabel}</div>
+      </div>
+    </div>
+    <button class="mcl mo-close">✕</button>
+  </div>
+  <div class="mbd" style="max-height:80vh;overflow-y:auto;">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:16px;">
+      ${[['Bransje',cl.b],['Tier',tn[cl.t]||'—'],['ROI',roi+'x'],['Agenter',cl.ag||0],['Avtale/mnd',fmtKr(cl.avtale)],['Sparer/mnd',fmtKr(cl.besparing)]].map(([l,v])=>'<div style="background:var(--s3);border-radius:9px;padding:10px;"><div class="tmn" style="margin-bottom:3px;">'+l+'</div><div style="font-weight:700;font-size:13px;">'+v+'</div></div>').join('')}
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button class="btn btn-sm" id="adm-kl-toggle" style="flex:1;background:${s==='aktiv'?'rgba(255,170,0,.12)':'rgba(0,229,160,.1)'};color:${s==='aktiv'?'var(--wa)':'var(--g)'};border:1px solid ${s==='aktiv'?'rgba(255,170,0,.3)':'rgba(0,229,160,.3)'};">
+        ${s==='aktiv' ? '⏸ Sett på pause' : '▶ Aktiver'}
+      </button>
+      <button class="btn btn-sm" id="adm-kl-archive" style="flex:1;background:rgba(100,100,120,.1);color:var(--mu);border:1px solid rgba(100,100,120,.2);">
+        📦 ${s==='arkivert' ? 'Gjenopprett' : 'Arkiver'}
+      </button>
+      <button class="btn btn-g btn-sm" id="adm-kl-save" style="flex:1;">💾 Lagre</button>
+    </div>
+
+    <div style="font-size:12px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">🤖 Agenter & kunnskap</div>
+    <div id="adm-ag-list">${agKnowHtml}</div>
+  </div>`;
+
+  openDynModal('m-klient-det', html);
+
+  // Wire status toggle
+  el('adm-kl-toggle').addEventListener('click', () => {
+    cl.s = cl.s === 'aktiv' ? 'pause' : 'aktiv';
+    const isAktiv = cl.s === 'aktiv';
+    // Pause/resume all agents for this client
+    (cl.agentIdx||[]).forEach(i => { if(AGENTS[i]) AGENTS[i].status = isAktiv ? 'aktiv' : 'pause'; });
+    const btn = el('adm-kl-toggle');
+    btn.textContent = isAktiv ? '⏸ Sett på pause' : '▶ Aktiver';
+    btn.style.background = isAktiv ? 'rgba(255,170,0,.12)' : 'rgba(0,229,160,.1)';
+    btn.style.color = isAktiv ? 'var(--wa)' : 'var(--g)';
+    toast(cl.n + (isAktiv ? ' aktivert ✓' : ' satt på pause ⏸'), isAktiv ? '' : 'warn');
+    renderClientsTable();
+  });
+
+  // Wire archive toggle
+  el('adm-kl-archive').addEventListener('click', () => {
+    cl.s = cl.s === 'arkivert' ? 'aktiv' : 'arkivert';
+    toast(cl.n + (cl.s === 'arkivert' ? ' arkivert 📦' : ' gjenopprettet ✓'), cl.s === 'arkivert' ? 'warn' : '');
+    renderClientsTable();
+    closeModal('m-klient-det');
+  });
+
+  // Wire save (agent knowledge, tone, greeting, webhook)
+  el('adm-kl-save').addEventListener('click', () => {
+    document.querySelectorAll('.adm-ag-status').forEach(s2  => { if(AGENTS[+s2.dataset.idx])  AGENTS[+s2.dataset.idx].status   = s2.value; });
+    document.querySelectorAll('.adm-ag-tone').forEach(t    => { if(AGENTS[+t.dataset.idx])   AGENTS[+t.dataset.idx].tone      = t.value; });
+    document.querySelectorAll('.adm-ag-greeting').forEach(g => { if(AGENTS[+g.dataset.idx])  AGENTS[+g.dataset.idx].greeting  = g.value.trim(); });
+    document.querySelectorAll('.adm-ag-know').forEach(k    => { if(AGENTS[+k.dataset.idx])   AGENTS[+k.dataset.idx].knowledge = k.value.trim(); });
+    document.querySelectorAll('.adm-ag-webhook').forEach(w  => { if(AGENTS[+w.dataset.idx])  AGENTS[+w.dataset.idx].webhook   = w.value.trim(); });
+    toast('Lagret ✓');
+    renderClientsTable();
+  });
+}
+
+
+/* ── USERS TABLE ── */
+function renderUsersTable() {
+  const tb = el('usr-tbody');
+  if (!tb) return;
+  const rows = Object.entries(USERS).map(([email, u]) => {
+    const isAdmin = u.role === 'admin';
+    return `<tr>
+      <td><div style="font-weight:600;">${isAdmin ? u.name : u.company || 'Ukjent'}</div><div class="tmn">${email}</div></td>
+      <td><span class="bge ${isAdmin ? 'ba' : 'bt2'}">${isAdmin ? 'SCS ADMIN' : 'KLIENT'}</span></td>
+      <td style="font-size:12px;color:${isAdmin ? 'var(--g)' : 'var(--m2)'};">${isAdmin ? 'Alt inkl. alle klienter' : 'Kun eget dashboard'}</td>
+      <td class="tmn">${isAdmin ? 'Nå' : 'i dag'}</td>
+      <td>${isAdmin ? '' : `<button class="btn btn-gh btn-sm usr-edit-btn" data-email="${email}">Rediger</button>`}</td>
+    </tr>`;
+  });
+  tb.innerHTML = rows.join('');
+  tb.querySelectorAll('.usr-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const u = USERS[btn.dataset.email];
+      openDynModal('m-edit-user', `<div class="mhd"><div class="mti">👤 Rediger bruker</div><button class="mcl mo-close">✕</button></div>
+        <div class="mbd">
+          <div class="fg1"><label class="fgl">Selskap</label><input class="fgi" id="eu-co" value="${u.company || ''}"></div>
+          <div class="fg1"><label class="fgl">E-post (skrivebeskyttet)</label><input class="fgi" value="${btn.dataset.email}" readonly style="background:var(--s3);color:var(--m2);"></div>
+          <div class="fg1"><label class="fgl">Nytt passord</label><input class="fgi" id="eu-pw" type="password" placeholder="La stå for å beholde"></div>
+        </div>
+        <div class="mft"><button class="btn btn-gh mo-close">Avbryt</button>
+        <button class="btn btn-g" id="eu-save">💾 Lagre</button></div>`);
+      el('eu-save').addEventListener('click', () => {
+        const newCo = el('eu-co').value.trim();
+        const newPw = el('eu-pw').value.trim();
+        if (newCo) u.company = newCo;
+        if (newPw) u.pass = newPw;
+        renderUsersTable();
+        closeModal('m-edit-user');
+        toast('Bruker oppdatert ✓');
+      });
+    });
+  });
+}
+
+/* ── AVTALER TABLE ── */
+function renderAvtaleTabell() {
+  const tb = el('av-tbody');
+  if (!tb) return;
+  const tn = { 1:'⚡ Liten', 2:'🚀 Medium', 3:'🏆 Stor' };
+  const sorted = [...CLIENTS].sort((a, b) => (b.besparing || 0) - (a.besparing || 0));
+  tb.innerHTML = sorted.map(cl => {
+    const netto = (cl.besparing || 0) - (cl.avtale || 0);
+    const roi = cl.avtale ? (cl.besparing / cl.avtale).toFixed(1) : '—';
+    const rc = roi >= 4 ? 'var(--g)' : roi >= 3 ? 'var(--au)' : 'var(--m2)';
+    return `<tr>
+      <td><div style="font-weight:600;">${cl.n}</div><div class="tmn">${cl.b}</div></td>
+      <td><span class="bge" style="font-size:9.5px;">${tn[cl.t] || '—'}</span></td>
+      <td class="tmn">${cl.ag}</td>
+      <td style="font-family:'DM Mono',monospace;font-weight:700;">${fmtKr(cl.avtale)}</td>
+      <td style="font-family:'DM Mono',monospace;color:var(--g);font-weight:600;">${fmtKr(cl.besparing)}</td>
+      <td style="font-family:'Instrument Sans',sans-serif;font-weight:700;color:${rc};">${roi}x</td>
+      <td style="font-family:'DM Mono',monospace;color:var(--g);">${fmtKr(netto)}</td>
+      <td><span class="bge ${cl.s === 'aktiv' ? 'ba' : 'bp'}">${cl.s.toUpperCase()}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── API KOSTNADER ── */
+function renderApiKostnader() {
+  const tb = el('api-tbody');
+  const varslerDiv = el('api-varsler');
+  if (!tb) return;
+  const sorted = [...CLIENTS].sort((a, b) => (b.apiKost || 0) - (a.apiKost || 0));
+  let totKost = 0, over = 0, nær = 0, varsler = [];
+  tb.innerHTML = sorted.map(cl => {
+    const kost = cl.apiKost || 0, grense = cl.apiGrense || 2000;
+    const pct = Math.min(Math.round(kost / grense * 100), 100);
+    const isOver = kost > grense, isWarn = !isOver && pct >= 80;
+    totKost += kost;
+    if (isOver) { over++; varsler.push({ nm: cl.n, kost, grense, type: 'over' }); }
+    if (isWarn) { nær++; varsler.push({ nm: cl.n, kost, grense, type: 'warn' }); }
+    const bc = isOver ? 'var(--er)' : isWarn ? 'var(--wa)' : 'var(--g)';
+    const badge = isOver ? '<span class="bge be">OVER GRENSE</span>' : isWarn ? '<span class="bge bp">NÆR GRENSE</span>' : '<span class="bge ba">OK</span>';
+    return `<tr>
+      <td><div style="font-weight:600;">${cl.n}</div><div class="tmn">${cl.b}</div></td>
+      <td class="tmn">${cl.ag}</td>
+      <td style="font-family:'DM Mono',monospace;font-weight:700;color:${isOver ? 'var(--er)' : isWarn ? 'var(--wa)' : 'var(--tx)'};">${fmtKr(kost)}</td>
+      <td class="tmn">${fmtKr(grense)}</td>
+      <td style="min-width:110px;"><div style="display:flex;align-items:center;gap:7px;"><div class="pb" style="flex:1;"><div class="pbf" style="width:${pct}%;background:${bc};"></div></div><span style="font-family:'DM Mono',monospace;font-size:10px;color:${bc};min-width:28px;">${pct}%</span></div></td>
+      <td>${badge}</td>
+      <td><button class="btn btn-gh btn-sm varsle-btn" data-nm="${cl.n}" data-kost="${kost}" data-grense="${grense}">📧 Varsle</button></td>
+    </tr>`;
+  }).join('');
+  tb.querySelectorAll('.varsle-btn').forEach(btn => {
+    btn.addEventListener('click', () => varsleKlient(btn.dataset.nm, parseInt(btn.dataset.kost), parseInt(btn.dataset.grense)));
+  });
+  const avg = sorted.length ? Math.round(totKost / sorted.length) : 0;
+  animV('api-tot',  fmtKr(totKost));
+  const overEl = el('api-over');
+  if (overEl) { overEl.textContent = over; overEl.style.color = over > 0 ? 'var(--er)' : 'var(--g)'; }
+  const warnEl = el('api-warn');
+  if (warnEl) { warnEl.textContent = nær; warnEl.style.color = nær > 0 ? 'var(--wa)' : 'var(--g)'; }
+  animV('api-avg', fmtKr(avg));
+  if (varslerDiv) {
+    if (varsler.length === 0) {
+      varslerDiv.innerHTML = '<div style="font-size:12.5px;color:var(--g);padding:4px 0;">✅ Ingen aktive varsler — alle klienter innenfor grensen.</div>';
+    } else {
+      varslerDiv.innerHTML = varsler.map(v => `
+        <div style="display:flex;align-items:center;justify-content:space-between;background:${v.type === 'over' ? 'rgba(255,61,61,.06)' : 'rgba(255,170,0,.06)'};border:1px solid ${v.type === 'over' ? 'rgba(255,61,61,.2)' : 'rgba(255,170,0,.2)'};border-radius:9px;padding:12px 14px;">
+          <div><div style="font-weight:700;font-size:12.5px;">${v.nm}</div><div style="font-size:11.5px;color:var(--m2);">${v.type === 'over' ? 'Over grensen' : 'Nær grensen'}: ${fmtKr(v.kost)} / ${fmtKr(v.grense)}</div></div>
+          <button class="btn btn-${v.type === 'over' ? 'er' : 'wa'} btn-sm varsle-inline-btn" data-nm="${v.nm}" data-kost="${v.kost}" data-grense="${v.grense}">📧 Varsle klient</button>
+        </div>`).join('');
+      varslerDiv.querySelectorAll('.varsle-inline-btn').forEach(btn => {
+        btn.addEventListener('click', () => varsleKlient(btn.dataset.nm, parseInt(btn.dataset.kost), parseInt(btn.dataset.grense)));
+      });
+    }
+  }
+}
+
+function varsleKlient(nm, kost, grense) {
+  const over = kost > grense;
+  const tekst = over
+    ? `Hei! Vi ser at din API-kostnad denne måneden (${fmtKr(kost)}) har overskredet grensen (${fmtKr(grense)}). Ta kontakt med oss for å diskutere tilleggskostnad.`
+    : `Hei! Din API-kostnad nærmer seg grensen. Nåværende forbruk: ${fmtKr(kost)} av ${fmtKr(grense)}.`;
+  navigator.clipboard.writeText(tekst).catch(() => {});
+  toast('Varseltekst for ' + nm + ' kopiert ✓', over ? 'err' : 'warn');
+}
+
+/* ── FAKTURERING ── */
+function renderFakturering() {
+  const tb = el('fak-tbody');
+  if (!tb) return;
+  const fakData = [
+    { n:'Tech Solutions', kr:34000, b:198000, dato:'01.02.2026', s:'ba', sl:'BETALT' },
+    { n:'Regnskap AS',    kr:11900, b:52000,  dato:'01.02.2026', s:'ba', sl:'BETALT' },
+    { n:'Juss Partners',  kr:18500, b:74000,  dato:'01.02.2026', s:'ba', sl:'BETALT' },
+    { n:'Finans Nord',    kr:22000, b:89000,  dato:'05.02.2026', s:'bp', sl:'VENTER' },
+    { n:'Eiendom Nord',   kr:8500,  b:31000,  dato:'01.02.2026', s:'ba', sl:'BETALT' },
+    { n:'Handel Butikk',  kr:7200,  b:24000,  dato:'01.02.2026', s:'ba', sl:'BETALT' },
+  ];
+  tb.innerHTML = fakData.map(f => `<tr>
+    <td style="font-weight:600;">${f.n}</td>
+    <td style="font-family:'DM Mono',monospace;font-weight:700;">${fmtKr(f.kr)}</td>
+    <td style="color:var(--g);font-family:'DM Mono',monospace;font-size:11px;">${fmtKr(f.b)}</td>
+    <td class="tmn">${f.dato}</td>
+    <td><span class="bge ${f.s}">${f.sl}</span></td>
+  </tr>`).join('');
+}
+
+/* ╔═══════════════════════════════════════════════════════════════
+   ║  NEW CLIENT
+   ╚═══════════════════════════════════════════════════════════════ */
+function pickTier(t) {
+  selTier = t;
+  document.querySelectorAll('.tsel').forEach(el => {
+    const isMe = parseInt(el.dataset.t) === t;
+    const tc = { 1:'var(--t1)', 2:'var(--t2)', 3:'var(--t3)' }[t];
+    const te = { 1:'var(--t1e)', 2:'var(--t2e)', 3:'var(--t3e)' }[t];
+    const tb2 = { 1:'var(--t1b)', 2:'var(--t2b)', 3:'var(--t3b)' }[t];
+    if (isMe) {
+      el.style.borderColor = te;
+      el.style.background = tb2;
+      el.querySelector('div').style.color = tc;
+    } else {
+      el.style.borderColor = 'var(--b2)';
+      el.style.background = 'var(--s2)';
+      el.querySelector('div').style.color = 'var(--m2)';
+    }
+  });
+}
+
+function ncCalcRoi() {
+  const avtale    = parseInt(el('nc-avtale')?.value) || 0;
+  const besparing = parseInt(el('nc-besparing')?.value) || 0;
+  const preview   = el('nc-roi-preview');
+  if (!avtale || !besparing) { if (preview) preview.style.display = 'none'; return; }
+  const roi   = (besparing / avtale).toFixed(1);
+  const netto = besparing - avtale;
+  const pct   = Math.round(netto / besparing * 100);
+  if (preview) preview.style.display = 'flex';
+  const rv = el('nc-roi-val'), nv = el('nc-netto-val'), pv = el('nc-pct-val');
+  if (rv) { rv.textContent = roi + 'x'; rv.style.color = roi >= 4 ? 'var(--g)' : roi >= 3 ? 'var(--au)' : 'var(--m2)'; }
+  if (nv) nv.textContent = fmtKr(netto);
+  if (pv) pv.textContent = pct + '%';
+}
+
+function ncGenPw() {
+  const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789!@#';
+  let pw = '';
+  for (let i = 0; i < 12; i++) pw += chars[Math.floor(Math.random() * chars.length)];
+  const pwEl = el('nc-pw');
+  if (pwEl) { pwEl.value = pw; pwEl.style.color = 'var(--g)'; setTimeout(() => pwEl.style.color = '', 2000); }
+}
+
+function addClient() {
+  const nm         = el('nc-nm')?.value?.trim();
+  const cp         = el('nc-cp')?.value?.trim();
+  const email      = el('nc-em')?.value?.trim();
+  const pw         = el('nc-pw')?.value?.trim();
+  const br         = el('nc-br')?.value || 'Annen';
+  const avtaleKr   = parseInt(el('nc-avtale')?.value) || 0;
+  const besKr      = parseInt(el('nc-besparing')?.value) || 0;
+  if (!nm)              { toast('Selskapsnavn er påkrevd', 'err'); return; }
+  if (!email || !email.includes('@')) { toast('Ugyldig e-postadresse', 'err'); return; }
+  if (!avtaleKr)        { toast('Fyll inn avtalepris', 'err'); return; }
+  if (USERS[email])     { toast('E-post finnes allerede', 'err'); return; }
+
+  const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let finalPw = pw;
+  if (!finalPw) { finalPw = ''; for (let i = 0; i < 12; i++) finalPw += chars[Math.floor(Math.random() * chars.length)]; }
+
+  const tierColors = { 1:'#00e5a0', 2:'#2f8bff', 3:'#f59e0b' };
+  const tierNames  = { 1:'Liten', 2:'Medium', 3:'Stor' };
+  const icons = ['🏢','🏡','🏦','🔧','💼','🏥','📦','⚡'];
+  const icon  = icons[Math.floor(Math.random() * icons.length)];
+  const roi   = avtaleKr ? (besKr / avtaleKr).toFixed(1) : 0;
+  const apiGrense = Math.round(avtaleKr * 0.2);
+
+  CLIENTS.push({ n:nm, b:br, t:selTier, ag:0, act:0, avtale:avtaleKr, besparing:besKr, roi:parseFloat(roi), apiKost:0, apiGrense, s:'aktiv', av:nm[0].toUpperCase(), c:tierColors[selTier] });
+  USERS[email] = { pass:finalPw, role:'client', company:nm, tier:selTier, icon, color:tierColors[selTier], agentIdx:[], stats:{ actions:0, leads:0, voices:0 }, avtaleKr, besparingKr:besKr, timeSaved:Math.round(besKr/600), apiKostKr:0, apiGrenseKr:apiGrense, contact:cp || nm };
+
+  renderClientsTable();
+  renderUsersTable();
+  updateAdminStats();
+  closeModal('m-newcl');
+
+  // Reset form
+  ['nc-nm','nc-cp','nc-em','nc-pw','nc-avtale','nc-besparing'].forEach(id => { const e = el(id); if (e) e.value = ''; });
+  const prev = el('nc-roi-preview');
+  if (prev) prev.style.display = 'none';
+
+  // Fill done modal
+  el('cl-done-nm').textContent = icon + ' ' + nm;
+  el('cl-done-em').textContent = email;
+  el('cl-done-pw').textContent = finalPw;
+  el('cl-done-tier').textContent = tierNames[selTier] + ' · Avtale: ' + fmtKr(avtaleKr) + (besKr ? ' · ROI: ' + roi + 'x' : '');
+  el('cl-done-tier').style.color = tierColors[selTier];
+  _lastClient = { nm, email, pw: finalPw, tier: selTier, tierName: tierNames[selTier], contact: cp, avtaleKr, besKr, roi };
+  openModal('m-cl-done');
+}
+
+/* ╔═══════════════════════════════════════════════════════════════
+   ║  CLIENT BOOT
+   ╚═══════════════════════════════════════════════════════════════ */
+function bootClient() {
+  const u = CU;
+  const tc = TIER_CFG[u.tier];
+  const agentCount = (u.agentIdx||[]).length;
+  const isMaxed = agentCount >= tc.max;
+  const isWarn  = !isMaxed && (agentCount / tc.max) >= 0.8;
+
+  // Topbar
+  el('c-icon').textContent  = u.icon;
+  el('c-name').textContent  = u.company;
+  el('c-av').textContent    = u.company[0];
+  el('c-tbadge').textContent = u.icon;
+  el('c-tbadge').style.background = u.tier === 1 ? 'rgba(0,229,160,0.15)' : u.tier === 2 ? 'rgba(47,139,255,0.15)' : 'rgba(245,158,11,0.15)';
+  el('c-greet').textContent = u.company;
+
+  // Capacity banners
+  el('c-tier-alert').style.display = 'none';
+  el('c-tier-warn').style.display  = 'none';
+  el('c-ag-alert').style.display   = 'none';
+  if (isMaxed) {
+    const desc = `Du bruker alle ${tc.max} agenter. Kontakt SCS for å utvide avtalen.`;
+    el('c-alert-desc').textContent    = desc;
+    el('c-ag-alert-desc').textContent = desc;
+    el('c-tier-alert').style.display  = 'flex';
+    el('c-ag-alert').style.display    = 'flex';
+  } else if (isWarn) {
+    el('c-warn-desc').textContent    = `Du bruker ${agentCount} av ${tc.max} agenter (${Math.round(agentCount/tc.max*100)}%). Ta kontakt med SCS om du trenger mer kapasitet.`;
+    el('c-tier-warn').style.display  = 'flex';
+  }
+
+  const supUp = el('c-sup-upgrade');
+  if (supUp) supUp.style.display = isMaxed ? 'block' : 'none';
+
+  // Settings
+  const setEm = el('c-set-em'); if (setEm) setEm.value = u.email;
+  const setCo = el('c-set-co'); if (setCo) setCo.value = u.company;
+  const setCp = el('c-set-cp'); if (setCp) setCp.value = u.contact || '';
+
+  updateClientROI();
+  renderClientAgList();
+  renderClientAgCards();
+  renderClientActLog();
+  buildClientCharts();
+
+  // API cost
+  const apiKostEl = el('c-api-kost');
+  if (apiKostEl) apiKostEl.textContent = fmtKr(u.apiKostKr || 0);
+
+
+  // Voice provider display & key fields
+  const cl = CLIENTS.find(c => c.n === u.company);
+  const vp = cl?.voiceProvider || u.voiceProvider || 'VAPI';
+  const vpInfo = {
+    'VAPI':       { name:'📞 VAPI',            desc:'Alt-i-ett voice AI-platform. Enkel oppsett, betaler per minutt.' },
+    'ElevenLabs': { name:'🎙 ElevenLabs + VAPI', desc:'Naturlig norsk tale via ElevenLabs, samtalelogikk via VAPI.' },
+    'Twilio':     { name:'📞 Twilio',           desc:'Telefoni via Twilio med norsk nummer. Rimeligere per samtale.' },
+  };
+  const vpi = vpInfo[vp] || vpInfo['VAPI'];
+  const nmEl = el('c-voice-provider-name'), dscEl = el('c-voice-provider-desc');
+  if (nmEl) nmEl.textContent = vpi.name;
+  if (dscEl) dscEl.textContent = vpi.desc;
+  const kf = el('c-voice-key-fields');
+  if (kf) {
+    if (vp === 'ElevenLabs') {
+      kf.innerHTML = '<div style="margin-bottom:8px;"><label class="fgl">ElevenLabs API Key</label>'
+        + '<div style="display:flex;gap:7px;"><input class="fgi" id="c-key-elevenlabs" placeholder="el_..." style="flex:1;font-family:monospace;font-size:11px;">'
+        + '<a href="https://elevenlabs.io/app" target="_blank" class="btn btn-gh btn-sm">↗</a></div>'
+        + '<div style="font-size:11px;color:var(--mu);margin-top:4px;">VAPI håndteres av SCS.</div></div>'
+        + '<input type="hidden" id="c-key-vapi" value="">'
+        + '<input type="hidden" id="c-key-twilio-sid" value="">'
+        + '<input type="hidden" id="c-key-twilio-token" value="">';
+    } else if (vp === 'Twilio') {
+      kf.innerHTML = '<div style="margin-bottom:8px;"><label class="fgl">Twilio Account SID</label>'
+        + '<div style="display:flex;gap:7px;"><input class="fgi" id="c-key-twilio-sid" placeholder="AC..." style="flex:1;font-family:monospace;font-size:11px;">'
+        + '<a href="https://console.twilio.com" target="_blank" class="btn btn-gh btn-sm">↗</a></div></div>'
+        + '<div><label class="fgl">Twilio Auth Token</label>'
+        + '<input class="fgi" id="c-key-twilio-token" placeholder="Auth Token..." style="width:100%;font-family:monospace;font-size:11px;"></div>'
+        + '<input type="hidden" id="c-key-vapi" value="">'
+        + '<input type="hidden" id="c-key-elevenlabs" value="">';
+    } else {
+      kf.innerHTML = '<div><label class="fgl">VAPI API Key</label>'
+        + '<div style="display:flex;gap:7px;"><input class="fgi" id="c-key-vapi" placeholder="vapi_..." style="flex:1;font-family:monospace;font-size:11px;">'
+        + '<a href="https://vapi.ai/dashboard" target="_blank" class="btn btn-gh btn-sm">↗</a></div>'
+        + '<div style="font-size:11px;color:var(--mu);margin-top:4px;">Brukes av voice-agentene for samtaler.</div></div>'
+        + '<input type="hidden" id="c-key-elevenlabs" value="">'
+        + '<input type="hidden" id="c-key-twilio-sid" value="">'
+        + '<input type="hidden" id="c-key-twilio-token" value="">';
+    }
+    if (el('c-key-openai'))       el('c-key-openai').value       = u.keyOpenAI       || '';
+    if (el('c-key-vapi'))         el('c-key-vapi').value         = u.keyVapi         || '';
+    if (el('c-key-elevenlabs'))   el('c-key-elevenlabs').value   = u.keyElevenLabs   || '';
+    if (el('c-key-twilio-sid'))   el('c-key-twilio-sid').value   = u.keyTwilioSid    || '';
+    if (el('c-key-twilio-token')) el('c-key-twilio-token').value = u.keyTwilioToken  || '';
+    if (el('c-key-hubspot'))      el('c-key-hubspot').value      = u.keyHubspot      || '';
+    if (el('c-n8n-url'))          el('c-n8n-url').value          = u.n8nUrl          || '';
+    if (el('c-webhook-url'))      el('c-webhook-url').value      = u.webhookUrl      || '';
+  }
+  setTimeout(renderClientAgentConfig, 100);
+
+  // Realtime
+  clearAllRT();
+  rtC = setInterval(() => {
+    u.stats.actions += Math.floor(Math.random() * 3);
+    if (Math.random() > 0.85) u.stats.leads++;
+    el('c-s-act').textContent   = u.stats.actions.toLocaleString('no-NO');
+    el('c-s-leads').textContent = u.stats.leads;
+    if (Math.random() > 0.7) pushClientFeed();
+    updateClientROI();
+  }, 8000);
+}
+
+function updateClientROI() {
+  const u = CU;
+  if (!u) return;
+  const netto = u.besparingKr - u.avtaleKr;
+  const roi   = (u.besparingKr / u.avtaleKr).toFixed(1);
+  const pct   = Math.round(netto / u.besparingKr * 100);
+
+  el('c-hero-besparing').textContent = fmtKr(u.besparingKr);
+  el('c-hero-avtale').textContent    = fmtKr(u.avtaleKr);
+  el('c-hero-netto').textContent     = fmtKr(netto);
+  el('c-hero-roi').textContent       = 'ROI: ' + roi + 'x';
+  el('c-roi-h').textContent  = u.timeSaved + 't';
+  el('c-roi-s').textContent  = fmtKr(u.besparingKr);
+  el('c-plan-cost').textContent = fmtKr(u.avtaleKr);
+  el('c-roi-n').textContent  = fmtKr(netto);
+  el('c-roi-x').textContent  = roi + 'x';
+  el('c-roi-pct').textContent = ' · du beholder ' + pct + '% av besparelsen';
+  el('c-s-ag').textContent   = u.agentIdx.length;
+  el('c-s-act').textContent  = (u.stats.actions || 0).toLocaleString('no-NO');
+  el('c-s-leads').textContent = u.stats.leads || 0;
+  el('c-s-tid').textContent  = u.timeSaved + 't';
+}
+
+function buildClientCharts() {
+  const u = CU;
+  const actVals = Array.from({ length: 7 }, () => Math.floor((u.stats.actions || 100) * (0.6 + Math.random() * 0.8) / 7));
+  buildChart('c-chart1', 'var(--b1)', actVals);
+  el('c-ch1-val').textContent = (u.stats.actions || 0).toLocaleString('no-NO');
+}
+
+function renderClientAgList() {
+  const list = el('c-aglist');
+  if (!list) return;
+  const u = CU;
+  list.innerHTML = u.agentIdx.map(idx => {
+    const a = AGENTS[idx];
+    if (!a) return '';
+    const rc = a.rate >= 90 ? 'var(--g)' : a.rate >= 80 ? 'var(--o)' : 'var(--er)';
+    return `<div style="display:flex;align-items:center;gap:11px;padding:11px 16px;border-bottom:1px solid rgba(47,139,255,.06);">
+      <div style="width:30px;height:30px;border-radius:8px;background:${a.bg};display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">${a.em}</div>
+      <div style="flex:1;"><div style="font-weight:600;font-size:12.5px;">${a.nm}</div><div class="tmn" style="margin-top:1px;">${a.ch}</div></div>
+      <div style="text-align:right;"><div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--g);">${a.act.toLocaleString('no-NO')} handl.</div><div style="font-family:'DM Mono',monospace;font-size:11px;color:${rc};">${a.rate}% ok</div></div>
+      <span class="bge ba" style="font-size:9px;">AKTIV</span>
+    </div>`;
+  }).join('');
+}
+
+function renderClientAgCards() {
+  const g = el('c-agcards');
+  if (!g) return;
+  const u = CU;
+  g.innerHTML = u.agentIdx.map(idx => {
+    const a = AGENTS[idx];
+    if (!a) return '';
+    const rc = a.rate >= 90 ? 'var(--g)' : a.rate >= 80 ? 'var(--o)' : 'var(--er)';
+    return `<div class="ccard" style="padding:17px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <div style="width:36px;height:36px;border-radius:9px;background:${a.bg};display:flex;align-items:center;justify-content:center;font-size:16px;">${a.em}</div>
+        <div><div style="font-weight:700;font-size:13px;">${a.nm}</div><div class="tmn" style="margin-top:2px;">${a.ch}</div></div>
+        <span class="bge ba" style="margin-left:auto;">AKTIV</span>
+      </div>
+      <div style="display:flex;gap:14px;border-top:1px solid rgba(47,139,255,.06);padding-top:11px;">
+        <div><div style="font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:19px;">${a.act.toLocaleString('no-NO')}</div><div class="tmn">Handlinger</div></div>
+        <div><div style="font-family:'Instrument Sans',sans-serif;font-weight:600;font-size:16px;color:${rc};">${a.rate}%</div><div class="tmn">Suksessrate</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderClientActLog() {
+  const log = el('c-actlog');
+  if (!log) return;
+  log.innerHTML = '';
+  for (let i = 0; i < 8; i++) pushClientFeedTo(log, false);
+
+  const cfeed = el('c-feed');
+  if (!cfeed) return;
+  cfeed.innerHTML = '';
+  for (let i = 0; i < 5; i++) pushClientFeedTo(cfeed, false, true);
+}
+
+function pushClientFeed() {
+  const cfeed = el('c-feed');
+  if (cfeed) pushClientFeedTo(cfeed, true, true);
+  const clog = el('c-actlog');
+  if (clog) pushClientFeedTo(clog, true, false);
+}
+
+function pushClientFeedTo(container, flash = true, mini = false) {
+  const t = ACT_T[Math.floor(Math.random() * ACT_T.length)];
+  const now = new Date().toLocaleTimeString('no-NO');
+  const u = CU;
+  const a = u?.agentIdx?.length ? AGENTS[u.agentIdx[Math.floor(Math.random() * u.agentIdx.length)]] : AGENTS[0];
+  const d = document.createElement('div');
+  if (mini) {
+    d.className = 'ti' + (flash ? ' fnb' : '');
+    d.innerHTML = `<span class="tibg tiau">${t.ic}</span><div style="flex:1;"><div style="font-size:12px;font-weight:500;">${t.msg(a?.nm || '')}</div><div class="tmn" style="margin-top:1px;">${now} · ${a?.nm || ''}</div></div>`;
+  } else {
+    d.className = 'ai' + (flash ? ' fnb' : '');
+    d.innerHTML = `<div class="aic" style="background:${t.bg}">${t.ic}</div><div><div style="font-size:12px;">${t.msg(a?.nm || '')}</div><div class="tmn" style="margin-top:1px;">${now} · ${a?.nm || ''}</div></div>`;
+  }
+  container.insertBefore(d, container.firstChild);
+  while (container.children.length > (mini ? 5 : 8)) container.removeChild(container.lastChild);
+}
+
+/* ╔═══════════════════════════════════════════════════════════════
+   ║  DYNAMIC MODALS
+   ╚═══════════════════════════════════════════════════════════════ */
+function openDynModal(id, html) {
+  let mo = el(id);
+  if (!mo) {
+    mo = document.createElement('div');
+    mo.className = 'mo';
+    mo.id = id;
+    mo.innerHTML = '<div class="mbox"></div>';
+    document.body.appendChild(mo);
+    mo.addEventListener('click', e => { if (e.target === mo) mo.classList.remove('on'); });
+  }
+  mo.querySelector('.mbox').innerHTML = html;
+  mo.classList.add('on');
+  mo.querySelectorAll('.mo-close').forEach(btn => btn.addEventListener('click', () => mo.classList.remove('on')));
+}
+
+/* ╔═══════════════════════════════════════════════════════════════
+   ║  SUPABASE SETTINGS
+   ╚═══════════════════════════════════════════════════════════════ */
+function loadSavedConfig() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('scs_sb') || '{}');
+    if (saved.url) { SB_CONFIG.url = saved.url; const e = el('sb-url'); if (e) e.value = saved.url; }
+    if (saved.key) { SB_CONFIG.anonKey = saved.key; const e = el('sb-key'); if (e) e.value = saved.key; }
+  } catch {}
+}
+function updateSBConfig() {
+  const urlEl = el('sb-url'), keyEl = el('sb-key');
+  SB_CONFIG.url = urlEl?.value?.trim() || '';
+  SB_CONFIG.anonKey = keyEl?.value?.trim() || '';
+}
+function saveSettings() {
+  updateSBConfig();
+  try { localStorage.setItem('scs_sb', JSON.stringify({ url: SB_CONFIG.url, key: SB_CONFIG.anonKey })); } catch {}
+  toast('Innstillinger lagret ✓');
+}
+async function testSupabase() {
+  const msg = el('sb-test-msg'), badge = el('set-conn-badge');
+  updateSBConfig();
+  if (!SB._enabled()) { if (msg) { msg.textContent = '⚠️ Fyll inn URL og Key først'; msg.style.color = 'var(--wa)'; } return; }
+  if (msg) { msg.textContent = '⏳ Tester...'; msg.style.color = 'var(--mu)'; }
+  const result = await SB.select('agent_actions', { limit: 1 });
+  if (result !== null) {
+    if (msg) { msg.textContent = '✅ Tilkoblet!'; msg.style.color = 'var(--g)'; }
+    if (badge) badge.innerHTML = '<span class="bge ba"><span class="ld"></span> Tilkoblet</span>';
+    setConnBadge(true); fetchLiveData();
+  } else {
+    if (msg) { msg.textContent = '❌ Feil — sjekk URL og Key'; msg.style.color = 'var(--er)'; }
+  }
+}
+
+/* ╔═══════════════════════════════════════════════════════════════
+   ║  EVENT LISTENERS — alle samlet her, ingen inline onclick
+   ╚═══════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  loadSavedConfig();
+
+  /* ── Login ── */
+  el('rtab-admin').addEventListener('click', () => {
+    loginRole = 'admin';
+    el('rtab-admin').classList.add('on'); el('rtab-client').classList.remove('on');
+    el('rtab-admin').classList.add('at');
+    el('lbtn').className = 'lbtn lbtn-a';
+    el('lbtn-tx').textContent = 'Logg inn som Admin';
+    el('lbtn-ic').textContent = '⚡';
+    document.querySelectorAll('.fi').forEach(i => i.classList.remove('cf'));
+    el('lerr').classList.remove('on');
+  });
+  el('rtab-client').addEventListener('click', () => {
+    loginRole = 'client';
+    el('rtab-client').classList.add('on'); el('rtab-admin').classList.remove('on');
+    el('lbtn').className = 'lbtn lbtn-c';
+    el('lbtn-tx').textContent = 'Logg inn som Klient';
+    el('lbtn-ic').textContent = '👤';
+    document.querySelectorAll('.fi').forEach(i => i.classList.add('cf'));
+    el('lerr').classList.remove('on');
+  });
+  el('lbtn').addEventListener('click', doLogin);
+  el('lin-em').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); else if(e.key && e.key.length===1) DEMO_MODE=false; });
+  el('lin-pw').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+  /* Demo hints */
+  const demoMap = {
+    admin: [atob('YWRtaW5Ac2ltcGx5Y29tcGxleC5ubw=='), 'admin123', 'admin'],
+    c1:    [atob('a3VuZGVAcmVnbnNrYXBjbGllbnQubm8='), 'klient123', 'client'],
+    c2:    [atob('a29udGFrdEBlaWVuZG9tbm9yZC5ubw=='), 'klient123', 'client'],
+    c3:    [atob('YWRtaW5AdGVjaHNvbHV0aW9ucy5ubw=='), 'klient123', 'client'],
+  };
+  document.querySelectorAll('.hint[data-demo]').forEach(hint => {
+    hint.addEventListener('click', () => {
+      const d = demoMap[hint.dataset.demo];
+      if (!d) return;
+      DEMO_MODE = true;
+      el('lin-em').value = d[0];
+      el('lin-pw').value = d[1];
+      if (d[2] === 'admin') el('rtab-admin').click();
+      else el('rtab-client').click();
+    });
+  });
+
+  
+  /* ── API save handler ── */
+  const lapiBtn = el('btn-lagre-api-setup');
+  if (lapiBtn) lapiBtn.addEventListener('click', () => {
+    const u = CU; if (!u) return;
+    u.keyOpenAI      = (el('c-key-openai')      ||{}).value || '';
+    u.keyVapi        = (el('c-key-vapi')        ||{}).value || '';
+    u.keyElevenLabs  = (el('c-key-elevenlabs')  ||{}).value || '';
+    u.keyTwilioSid   = (el('c-key-twilio-sid')  ||{}).value || '';
+    u.keyTwilioToken = (el('c-key-twilio-token')||{}).value || '';
+    u.keyHubspot     = (el('c-key-hubspot')     ||{}).value || '';
+    u.n8nUrl         = (el('c-n8n-url')         ||{}).value || '';
+    u.webhookUrl     = (el('c-webhook-url')      ||{}).value || '';
+    toast('Nøkler lagret ✓');
+  });
+
+  /* ── Webhook copy ── */
+  const whCopy = el('c-webhook-copy');
+  if (whCopy) whCopy.addEventListener('click', () => {
+    const v = (el('c-webhook-url')||{}).value || '';
+    if (v) { navigator.clipboard?.writeText(v); toast('URL kopiert ✓'); }
+    else toast('Ingen URL å kopiere', 'warn');
+  });
+
+  /* ── Client settings save ── */
+  const cSetSave = el('btn-lagre-klient-set');
+  if (cSetSave) cSetSave.addEventListener('click', () => {
+    const u = CU; if (!u) return;
+    const co = (el('c-set-co')||{}).value;
+    const cp = (el('c-set-cp')||{}).value;
+    if (co) u.company = co;
+    if (cp) u.contact = cp;
+    toast('Innstillinger lagret ✓');
+  });
+
+/* ── Admin nav ── */
+  document.querySelectorAll('.ani[data-page]').forEach(item => {
+    item.addEventListener('click', () => aGo(item.dataset.page));
+  });
+  document.querySelectorAll('[data-goto]').forEach(btn => {
+    btn.addEventListener('click', () => aGo(btn.dataset.goto));
+  });
+
+  /* ── Client nav ── */
+  document.querySelectorAll('.cni[data-cpage]').forEach(item => {
+    item.addEventListener('click', () => {
+      cGo(item.dataset.cpage);
+      if (item.dataset.cpage === 'c-api') setTimeout(renderClientAgentConfig, 60);
+    });
+  });
+  document.querySelectorAll('[data-cpage]:not(.cni)').forEach(btn => {
+    btn.addEventListener('click', () => cGo(btn.dataset.cpage));
+  });
+
+  /* ── Modal open triggers ── */
+  document.querySelectorAll('[data-modal]').forEach(btn => {
+    btn.addEventListener('click', () => openModal(btn.dataset.modal));
+  });
+
+  /* ── Modal close ── */
+  document.querySelectorAll('.mo-close').forEach(btn => {
+    btn.addEventListener('click', () => btn.closest('.mo').classList.remove('on'));
+  });
+  document.querySelectorAll('.mo').forEach(mo => {
+    mo.addEventListener('click', e => { if (e.target === mo) mo.classList.remove('on'); });
+  });
+
+  /* ── Logout ── */
+  el('a-logout-btn').addEventListener('click', logout);
+  el('c-logout-btn').addEventListener('click', logout);
+
+  /* ── Ny klient ── */
+  el('btn-newcl').addEventListener('click', () => { ncGenPw(); openModal('m-newcl'); });
+  el('btn-nc-genpw').addEventListener('click', ncGenPw);
+  el('nc-avtale').addEventListener('input', ncCalcRoi);
+  el('nc-besparing').addEventListener('input', ncCalcRoi);
+  el('btn-add-client').addEventListener('click', addClient);
+
+  /* Tier selector */
+  document.querySelectorAll('.tsel').forEach(ts => {
+    ts.addEventListener('click', () => pickTier(parseInt(ts.dataset.t)));
+  });
+  pickTier(1); // default
+
+  /* Klient opprettet modal */
+  el('btn-kopier-tilgang').addEventListener('click', () => {
+    const email = el('cl-done-em').textContent;
+    const pw    = el('cl-done-pw').textContent;
+    navigator.clipboard.writeText(`E-post: ${email}\nPassord: ${pw}`).catch(() => {});
+    toast('Innloggingsdetaljer kopiert ✓');
+  });
+  el('btn-kopier-velkost').addEventListener('click', () => {
+    const c = _lastClient;
+    const tekst = `Hei${c.contact ? ' ' + c.contact : ''}!\n\nVelkommen som klient hos Simply Complex Solutions 🚀\n\nInnlogging:\n• URL: [CTM-dashboardets URL]\n• E-post: ${c.email || ''}\n• Passord: ${c.pw || ''}\n\nDin avtale: ${fmtKr(c.avtaleKr || 0)}\n\nTa kontakt på hei@simplycomplex.no om du har spørsmål.\n\nBeste hilsener,\nSCS-teamet`;
+    navigator.clipboard.writeText(tekst).catch(() => {});
+    toast('Velkomsttekst kopiert ✓');
+  });
+  el('btn-goto-kl').addEventListener('click', () => { closeModal('m-cl-done'); aGo('a-kl'); });
+
+  /* ── Be om flere agenter ── */
+  el('upg-send-btn').addEventListener('click', () => {
+    const antall = el('upg-antall').value.trim();
+    const msg    = el('upg-msg').value.trim();
+    if (!antall) { toast('Angi antall agenter du ønsker', 'err'); return; }
+    const company = CU && CU.company ? CU.company : 'Ukjent klient';
+    const now = new Date().toLocaleTimeString('no-NO');
+    const feed = el('a-feed');
+    if (feed) {
+      const d = document.createElement('div');
+      d.className = 'ai fn';
+      d.innerHTML = '<div class="aic" style="background:rgba(0,229,160,0.15)">➕</div>'
+        + '<div><div style="font-size:12px;font-weight:600;color:var(--g);">'
+        + company + ' ber om ' + antall + ' ny' + (antall === '1' ? '' : 'e')
+        + ' agent' + (antall === '1' ? '' : 'er') + '</div>'
+        + '<div style="font-size:10px;color:var(--mu);font-family:monospace;margin-top:1px;">'
+        + now + ' · ' + (msg ? msg.slice(0, 60) : 'Ingen ekstra info') + '</div></div>';
+      feed.insertBefore(d, feed.firstChild);
+      while (feed.children.length > 6) feed.removeChild(feed.lastChild);
+    }
+    el('upg-antall').value = '';
+    el('upg-msg').value = '';
+    closeModal('m-upgrade');
+    toast('Forespørsel sendt til SCS ✓', 'ok');
+  });
+
+  /* ── Inviter bruker ── */
+  el('btn-invuser').addEventListener('click', () => openModal('m-invuser'));
+  el('btn-do-inviter').addEventListener('click', () => {
+    const nm = el('inv-nm').value.trim();
+    const em = el('inv-em').value.trim();
+    if (!nm || !em) { toast('Navn og e-post påkrevd', 'err'); return; }
+    el('inv-nm').value = '';
+    el('inv-em').value = '';
+    closeModal('m-invuser');
+    toast('Invitasjon sendt til ' + nm + ' ✓');
+  });
+
+  /* ── Klient: søk og filter ── */
+  el('cl-search').addEventListener('input', () => renderClientsTable(el('cl-search').value, el('cl-tier-filter').value));
+  el('cl-tier-filter').addEventListener('change', () => renderClientsTable(el('cl-search').value, el('cl-tier-filter').value));
+
+  /* ── Ny agent ── */
+  // Populate klient dropdown
+  document.querySelectorAll('#ny-klient option:not(:first-child)').forEach(o => o.remove());
+  CLIENTS.forEach(cl => {
+    const opt = document.createElement('option');
+    opt.textContent = cl.n;
+    el('ny-klient').appendChild(opt);
+  });
+  el('btn-opprett-agent').addEventListener('click', () => {
+    const nm = el('ny-nm').value.trim();
+    if (!nm) { toast('Skriv inn agentnavn først', 'err'); return; }
+    const btn = el('btn-opprett-agent');
+    btn.textContent = '⏳...'; btn.disabled = true;
+    setTimeout(() => {
+      AGENTS.push({ nm, ch: el('ny-kanal').value.replace(/^[^ ]+ /, ''), em: '🤖', bg: 'rgba(0,229,160,.08)', act: 0, rate: 99, status: 'aktiv' });
+      renderAgentCards();
+      el('ny-nm').value = '';
+      btn.textContent = '⚡ Aktiver agent'; btn.disabled = false;
+      aGo('a-ag');
+      toast(`Agent "${nm}" opprettet ✓`);
+    }, 700);
+  });
+
+  /* ── Integrasjoner ── */
+  document.querySelectorAll('.int-koble-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.textContent = '⏳ Kobler...'; btn.disabled = true;
+      setTimeout(() => {
+        const badge = btn.previousElementSibling;
+        if (badge) { badge.textContent = 'TILKOBLET'; badge.className = 'bge ba'; }
+        btn.textContent = '✓ Tilkoblet'; btn.disabled = false;
+        toast('Tilkoblet ✓');
+      }, 1100);
+    });
+  });
+
+  /* ── Supabase settings ── */
+  el('btn-test-sb').addEventListener('click', testSupabase);
+  el('btn-save-settings').addEventListener('click', saveSettings);
+  el('btn-copy-webhook').addEventListener('click', () => {
+    const webhookEl = el('webhook-url');
+    navigator.clipboard.writeText(webhookEl.textContent).catch(() => {});
+    webhookEl.style.color = 'var(--g)'; setTimeout(() => webhookEl.style.color = '', 1500);
+    toast('Webhook URL kopiert ✓');
+  });
+  el('btn-open-sb').addEventListener('click', () => window.open('https://supabase.com/dashboard','_blank'));
+  el('btn-open-n8n').addEventListener('click', () => window.open('https://app.n8n.cloud','_blank'));
+
+  /* ── Email/Voice save ── */
+  el('btn-save-email').addEventListener('click', () => toast('Email-konfig lagret ✓'));
+  el('btn-save-voice').addEventListener('click', () => toast('Voice-konfig lagret ✓'));
+  el('btn-export-api').addEventListener('click', () => toast('Rapport eksportert ✓'));
+
+  /* ── Glemt passord ── */
+  el('l-forgot').addEventListener('click', () => openModal('m-glemt-pw'));
+  el('btn-forgot-send').addEventListener('click', () => {
+    const em = (el('forgot-em')||{}).value;
+    if (!em) { toast('Fyll inn e-post', 'err'); return; }
+    toast('Forespørsel sendt. SCS tar kontakt.');
+    closeModal('m-glemt-pw');
+  });
+
+  /* ── Pause alle agenter ── */
+  el('btn-pause-alle').addEventListener('click', () => {
+    if (!confirm('Pause ALLE agenter?')) return;
+    AGENTS.forEach(a => a.status = 'pause');
+    renderAgentCards();
+    toast('Alle agenter pausert', 'warn');
+  });
+
+  /* ── Klient innstillinger ── */
+  el('btn-lagre-klient-set').addEventListener('click', () => {
+    const co = el('c-set-co')?.value;
+    const cp = el('c-set-cp')?.value;
+    if (CU) { if (co) CU.company = co; if (cp) CU.contact = cp; }
+    const nmEl = el('c-name'); if (nmEl && co) nmEl.textContent = co;
+    toast('Innstillinger lagret ✓');
+  });
+
+  /* ── Support sak ── */
+  el('btn-send-sak').addEventListener('click', () => {
+    const emne = el('sup-emne')?.value?.trim() || '';
+    if (!emne) { toast('Skriv inn emne først', 'err'); return; }
+    el('btn-send-sak').textContent = '⏳ Sender...'; el('btn-send-sak').disabled = true;
+    setTimeout(() => {
+      toast('Sak "' + emne.slice(0, 28) + '" sendt ✓');
+      el('sup-emne').value = '';
+      el('btn-send-sak').textContent = '📤 Send sak'; el('btn-send-sak').disabled = false;
+    }, 800);
+  });
+});
+
+/* ══ renderClientAgentConfig ══ */
+function renderClientAgentConfig() {
+  const u = CU;
+  const container = el('c-agent-config-list');
+  if (!container || !u) return;
+
+  const idxList = (u.agentIdx && u.agentIdx.length)
+    ? u.agentIdx
+    : AGENTS.map((_,i) => i).filter(i => AGENTS[i] && AGENTS[i].klient === u.company);
+  const agenter = idxList.map(i => AGENTS[i]).filter(Boolean);
+
+  let out = '';
+
+  // Always show general knowledge input
+  out += '<div style="background:rgba(0,229,160,.04);border:1px solid rgba(0,229,160,.15);border-radius:11px;padding:14px;margin-bottom:2px;">'
+    + '<div style="font-size:11.5px;color:var(--m2);margin-bottom:10px;">'
+    + (agenter.length
+        ? '<span style="font-weight:700;color:var(--g);">📚 Generell kunnskap</span> — deles med alle agentene dine.'
+        : '<span style="font-weight:700;color:var(--g);">ℹ️ SCS setter opp agentene dine.</span> Du kan allerede legge inn informasjon agentene vil bruke.')
+    + '</div>'
+    + '<div class="fg1"><textarea class="fgt" id="cl-general-knowledge" style="height:100px;font-size:12px;" placeholder="Produktinfo, priser, FAQ, rutiner, kontaktinfo, åpningstider...">'
+    + (u.generalKnowledge||'') + '</textarea></div>'
+    + '<button class="btn btn-g btn-sm" id="cl-save-general-know" style="margin-top:8px;width:100%;">💾 Lagre kunnskap</button>'
+    + '</div>';
+
+  agenter.forEach((a, ai) => {
+    const idx = idxList[ai];
+    out += '<div style="border:1px solid var(--b2);border-radius:11px;padding:14px;background:var(--s3);">'
+      + '<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px;">'
+      + '<div style="width:34px;height:34px;border-radius:8px;background:' + a.bg + ';display:flex;align-items:center;justify-content:center;font-size:15px;">' + (a.em||'🤖') + '</div>'
+      + '<div style="flex:1;"><div style="font-weight:700;font-size:13px;">' + a.nm + '</div><div style="font-size:11px;color:var(--m2);">' + (a.ch||'—') + '</div></div>'
+      + '<span class="bge ' + (a.status==='aktiv'?'ba':'bp') + '" style="font-size:9px;">' + (a.status||'aktiv').toUpperCase() + '</span>'
+      + '</div>'
+      + (a.knowledge
+          ? '<div style="background:var(--bg);border:1px solid rgba(0,229,160,.2);border-radius:8px;padding:9px 12px;margin-bottom:10px;">'
+            + '<div style="font-size:10px;font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Aktiv kunnskap fra SCS</div>'
+            + '<div style="font-size:12px;color:var(--m2);white-space:pre-wrap;max-height:70px;overflow-y:auto;">' + a.knowledge + '</div>'
+            + '</div>'
+          : '')
+      + '<div class="fg1" style="margin-bottom:8px;"><label class="fgl">📝 Din tilleggskunnskap for ' + a.nm + '</label>'
+      + '<textarea class="fgt cl-ag-knowledge" data-idx="' + idx + '" style="height:75px;font-size:12px;" placeholder="Spesifikk info, rutiner, instrukser kun for denne agenten...">'
+      + (a.clientKnowledge||'') + '</textarea></div>'
+      + '<div class="fg1" style="margin-bottom:8px;"><label class="fgl">💬 Innspill til SCS</label>'
+      + '<textarea class="fgt cl-ag-feedback" data-idx="' + idx + '" style="height:50px;font-size:12px;" placeholder="F.eks.: Agenten bør nevne ny pakke, eller alltid svare på norsk.">'
+      + (a.clientFeedback||'') + '</textarea></div>'
+      + '<button class="btn btn-g btn-sm cl-ag-save" data-idx="' + idx + '" style="width:100%;">💾 Lagre</button>'
+      + '</div>';
+  });
+
+  container.innerHTML = out;
+
+  const gBtn = el('cl-save-general-know');
+  if (gBtn) gBtn.addEventListener('click', () => {
+    u.generalKnowledge = (el('cl-general-knowledge')||{}).value || '';
+    toast('Kunnskap lagret ✓');
+  });
+
+  container.querySelectorAll('.cl-ag-save').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      const card = btn.closest('div[style*="border:1px solid var(--b2)"]');
+      if (!card || !AGENTS[idx]) return;
+      const kt = card.querySelector('.cl-ag-knowledge');
+      const ft = card.querySelector('.cl-ag-feedback');
+      if (kt) AGENTS[idx].clientKnowledge = kt.value.trim();
+      if (ft) AGENTS[idx].clientFeedback  = ft.value.trim();
+      toast('Lagret ✓');
+    });
+  });
+}
+
+</script>
+</body>
+</html>
