@@ -1183,7 +1183,7 @@ tr:hover td{background:rgba(255,255,255,0.012);}
     <div class="mhd"><div class="mti">🔐 Glemt passord</div><button class="mcl mo-close">✕</button></div>
     <div class="mbd">
       <div style="background:rgba(47,139,255,.06);border:1px solid rgba(47,139,255,.15);border-radius:10px;padding:14px;margin-bottom:14px;font-size:12.5px;color:var(--m2);line-height:1.6;">
-        Skriv inn e-posten din, så sender vi en lenke for å tilbakestille passordet.
+        Skriv inn e-posten din. Du mottar et nytt passord på e-post.
       </div>
       <div class="fg1"><label class="fgl">Din e-post</label><input class="fgi" id="forgot-em" placeholder="din@email.no" type="email"></div>
     </div>
@@ -2703,13 +2703,19 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ── Glemt passord ── */
   el('l-forgot').addEventListener('click', () => openModal('m-glemt-pw'));
   el('btn-forgot-send').addEventListener('click', async () => {
-    const em = (el('forgot-em')||{}).value;
+    const em = (el('forgot-em')||{}).value?.trim();
     if (!em) { toast('Fyll inn e-post', 'err'); return; }
-    if (sb) {
-      const { error } = await sb.auth.resetPasswordForEmail(em, { redirectTo: window.location.origin });
+    const btn = el('btn-forgot-send');
+    btn.textContent = 'Sender...'; btn.disabled = true;
+    try {
+      const { error } = await sb.rpc('send_password_reset', { p_email: em, p_login_url: window.location.href });
       if (error) toast('Feil: ' + error.message, 'err');
-      else toast('Tilbakestillingslenke sendt til ' + em);
+      else toast('Nytt passord sendt til ' + em);
+    } catch (e) {
+      toast('Kunne ikke sende nytt passord', 'err');
     }
+    btn.textContent = '📧 Send forespørsel'; btn.disabled = false;
+    el('forgot-em').value = '';
     closeModal('m-glemt-pw');
   });
 
