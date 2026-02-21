@@ -1116,7 +1116,8 @@ tr:hover td{background:rgba(255,255,255,0.012);}
       <div style="font-size:12px;color:var(--m2);line-height:1.6;">Send kunden e-post + passord over sikker kanal. De kan logge inn umiddelbart.</div>
     </div>
     <div class="mft" style="justify-content:space-between;">
-      <button class="btn btn-gh btn-sm" id="btn-kopier-velkost">📧 Kopier velkomsttekst</button>
+      <button class="btn btn-gh btn-sm" id="btn-kopier-velkost">📋 Kopier velkomsttekst</button>
+      <button class="btn btn-sm" id="btn-send-velkost" style="background:rgba(47,139,255,.1);color:var(--a);border:1px solid rgba(47,139,255,.25);">📧 Send velkomst-epost</button>
       <button class="btn btn-g" id="btn-goto-kl">Gå til klientliste →</button>
     </div>
   </div>
@@ -1668,6 +1669,7 @@ function visKlientDetaljer(cl) {
     <div style="display:flex;gap:8px;margin-bottom:16px;">
       <button class="btn btn-sm" id="adm-kl-toggle" style="flex:1;background:${s==='aktiv'?'rgba(255,170,0,.12)':'rgba(0,229,160,.1)'};color:${s==='aktiv'?'var(--wa)':'var(--g)'};border:1px solid ${s==='aktiv'?'rgba(255,170,0,.3)':'rgba(0,229,160,.3)'};">${s==='aktiv'?'⏸ Sett pa pause':'▶ Aktiver'}</button>
       <button class="btn btn-sm" id="adm-kl-archive" style="flex:1;background:rgba(100,100,120,.1);color:var(--mu);border:1px solid rgba(100,100,120,.2);">📦 ${s==='arkivert'?'Gjenopprett':'Arkiver'}</button>
+      <button class="btn btn-sm" id="adm-kl-delete" style="flex:1;background:rgba(255,59,48,.08);color:var(--er);border:1px solid rgba(255,59,48,.2);">🗑 Slett</button>
       <button class="btn btn-g btn-sm" id="adm-kl-save" style="flex:1;">💾 Lagre</button>
     </div>
     <div style="font-size:12px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">🤖 Agenter & kunnskap</div>
@@ -1692,6 +1694,19 @@ function visKlientDetaljer(cl) {
     renderClientsTable();
     toast(cl.n + (newS === 'arkivert' ? ' arkivert' : ' gjenopprettet'), newS === 'arkivert' ? 'warn' : 'ok');
     closeModal('m-klient-det');
+  });
+
+  el('adm-kl-delete').addEventListener('click', async () => {
+    if (!confirm('Er du sikker pa at du vil slette ' + cl.n + '? Dette sletter klienten, alle agenter og tilknyttede data permanent.')) return;
+    if (!confirm('Siste sjanse — dette kan ikke angres. Slett ' + cl.n + '?')) return;
+    await sb.from('clients').delete().eq('id', cl.id);
+    await loadAdminData();
+    renderClientsTable();
+    renderAgentCards();
+    updateAdminStats();
+    renderUsersTable();
+    closeModal('m-klient-det');
+    toast(cl.n + ' slettet permanent', 'warn');
   });
 
   el('adm-kl-save').addEventListener('click', async () => {
@@ -2447,6 +2462,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const tekst = `Hei${c.contact?' '+c.contact:''}!\n\nVelkommen som klient hos Simply Complex Solutions!\n\nInnlogging:\n- URL: ${window.location.href}\n- E-post: ${c.email||''}\n- Passord: ${c.pw||''}\n\nDin avtale: ${fmtKr(c.avtaleKr||0)}\n\nTa kontakt pa hei@simplycomplex.no om du har sporsmal.\n\nBeste hilsener,\nSCS-teamet`;
     navigator.clipboard.writeText(tekst).catch(() => {});
     toast('Velkomsttekst kopiert');
+  });
+  el('btn-send-velkost').addEventListener('click', () => {
+    const c = _lastClient;
+    if (!c || !c.email) { toast('Ingen e-post oppgitt', 'err'); return; }
+    const subject = encodeURIComponent('Velkommen til SCS kundeportal');
+    const body = encodeURIComponent(`Hei${c.contact ? ' ' + c.contact : ''}!\n\nVelkommen som klient hos Simply Complex Solutions!\n\nDu kan logge inn her:\n${window.location.href}\n\nInnlogging:\nE-post: ${c.email}\nPassord: ${c.pw}\n\nDin avtale: ${c.tierName} - ${fmtKr(c.avtaleKr || 0)}/mnd\n\nTa kontakt på hei@simplycomplex.no om du har spørsmål.\n\nBeste hilsener,\nSCS-teamet`);
+    window.open(`mailto:${c.email}?subject=${subject}&body=${body}`, '_blank');
   });
   el('btn-goto-kl').addEventListener('click', () => { closeModal('m-cl-done'); aGo('a-kl'); });
 
