@@ -2468,7 +2468,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!c || !c.email) { toast('Ingen e-post oppgitt', 'err'); return; }
     const subject = encodeURIComponent('Velkommen til SCS kundeportal');
     const body = encodeURIComponent(`Hei${c.contact ? ' ' + c.contact : ''}!\n\nVelkommen som klient hos Simply Complex Solutions!\n\nDu kan logge inn her:\n${window.location.href}\n\nInnlogging:\nE-post: ${c.email}\nPassord: ${c.pw}\n\nDin avtale: ${c.tierName} - ${fmtKr(c.avtaleKr || 0)}/mnd\n\nTa kontakt på hei@simplycomplex.no om du har spørsmål.\n\nBeste hilsener,\nSCS-teamet`);
-    window.open(`mailto:${c.email}?subject=${subject}&body=${body}`, '_blank');
+    window.location.href = `mailto:${c.email}?subject=${subject}&body=${body}`;
   });
   el('btn-goto-kl').addEventListener('click', () => { closeModal('m-cl-done'); aGo('a-kl'); });
 
