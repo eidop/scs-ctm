@@ -323,11 +323,12 @@ tr:hover td{background:rgba(255,255,255,0.012);}
   .ac{padding:14px;}
 
   /* Client topbar */
-  .ctb{padding:0 14px;height:auto;min-height:52px;flex-wrap:wrap;gap:8px;padding-top:8px;padding-bottom:8px;}
-  .ctb > div:first-child{width:100%;flex-wrap:wrap;gap:8px;}
-  .cnav{flex-wrap:wrap;gap:2px;}
-  .cni{padding:5px 10px;font-size:12px;}
-  .ctbr{width:100%;justify-content:flex-end;gap:8px;flex-wrap:wrap;}
+  .ctb{padding:10px 14px;height:auto;min-height:48px;flex-direction:column;gap:6px;align-items:stretch;}
+  .ctb > div:first-child{flex-wrap:wrap;gap:6px;}
+  .c-sep{display:none;}
+  .cnav{flex-wrap:wrap;gap:3px;}
+  .cni{padding:6px 10px;font-size:12px;border-radius:6px;}
+  .ctbr{justify-content:space-between;gap:8px;flex-wrap:wrap;}
   .c-cbadge{font-size:11px;padding:4px 10px;}
   .c-content{padding:14px;}
 
@@ -362,15 +363,23 @@ tr:hover td{background:rgba(255,255,255,0.012);}
 
   /* General text sizing */
   .apt{font-size:14px;}
+
+  /* Overflow prevention */
+  .akv,.tmn{word-break:break-all;}
+  .c-cbadge span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;}
 }
 
 @media(max-width:480px){
   .g4{grid-template-columns:1fr;gap:8px;}
+  .fg2{grid-template-columns:1fr;}
   .lw{max-width:100vw;padding:0 8px;}
   .l-card{padding:18px 14px;}
   .sval{font-size:16px;}
   .c-mark{font-size:13px;}
   .cni{font-size:11px;padding:4px 8px;}
+  .ctbr{flex-direction:column;align-items:stretch;gap:6px;}
+  .c-cbadge{justify-content:center;}
+  .c-cbadge span{max-width:none;}
 }
 </style>
 </head>
