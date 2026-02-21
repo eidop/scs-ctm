@@ -1952,7 +1952,7 @@ async function addClient() {
       toast('Epost feilet', 'warn');
     }
 
-    // 3. Create auth user + profile
+    // 3. Create auth user + profile (or update password if exists)
     try {
       const { data: { session: adminSession } } = await sb.auth.getSession();
       const { data: signUpData, error: signUpErr } = await sb.auth.signUp({
@@ -1961,8 +1961,25 @@ async function addClient() {
       });
       if (adminSession) await sb.auth.setSession(adminSession);
 
-      if (signUpErr) {
-        console.warn('Signup feil:', signUpErr.message);
+      if (signUpErr && signUpErr.message.includes('already registered')) {
+        // User exists in auth — update password via server-side function
+        await sb.rpc('reset_user_password', { p_email: email, p_password: finalPw });
+        // Ensure users table + client_users link exists
+        const { data: existingUser } = await sb.from('users').select('id').eq('email', email).single();
+        if (existingUser) {
+          await sb.from('client_users').upsert({ client_id: client.id, user_id: existingUser.id, is_primary: true }, { onConflict: 'client_id,user_id' });
+        } else {
+          // Auth user exists but no profile — look up auth_id and create profile
+          const { data: authLookup } = await sb.rpc('get_auth_uid_by_email', { p_email: email });
+          if (authLookup) {
+            const { data: newProfile } = await sb.from('users').insert({
+              auth_id: authLookup, email, role: 'client', display_name: cp || nm, company: nm,
+            }).select().single();
+            if (newProfile) {
+              await sb.from('client_users').insert({ client_id: client.id, user_id: newProfile.id, is_primary: true });
+            }
+          }
+        }
       } else if (signUpData?.user) {
         const { data: userProfile } = await sb.from('users').insert({
           auth_id: signUpData.user.id, email,
