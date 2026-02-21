@@ -1933,53 +1933,43 @@ async function addClient() {
     return;
   }
 
-  // 2. Create auth user + profile (if email provided)
+  // 2. Generate password + send welcome email FIRST (before signup changes session)
   let finalPw = pw;
   if (!finalPw) { const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789'; finalPw = ''; for (let i = 0; i < 12; i++) finalPw += chars[Math.floor(Math.random() * chars.length)]; }
 
   if (email && email.includes('@')) {
+    // Send welcome email immediately (session is still valid here)
+    const { error: mailErr } = await sb.rpc('send_welcome_email', {
+      p_to: email, p_name: cp || nm, p_company: nm,
+      p_password: finalPw, p_login_url: window.location.href,
+      p_avtale: tierNames[selTier] + ' - ' + fmtKr(avtaleKr) + '/mnd'
+    });
+    if (mailErr) toast('Epost feilet: ' + mailErr.message, 'warn');
+    else toast('Velkomst-epost sendt til ' + email);
+
+    // 3. Create auth user + profile
     try {
       const { data: { session: adminSession } } = await sb.auth.getSession();
-
       const { data: signUpData, error: signUpErr } = await sb.auth.signUp({
         email, password: finalPw,
         options: { emailRedirectTo: window.location.origin }
       });
-
       if (adminSession) await sb.auth.setSession(adminSession);
 
       if (signUpErr) {
-        toast('Klient opprettet, men brukerkonto feilet: ' + signUpErr.message, 'warn');
+        console.warn('Signup feil:', signUpErr.message);
       } else if (signUpData?.user) {
         const { data: userProfile } = await sb.from('users').insert({
           auth_id: signUpData.user.id, email,
           role: 'client', display_name: cp || nm, company: nm,
         }).select().single();
-
         if (userProfile) {
           await sb.from('client_users').insert({
             client_id: client.id, user_id: userProfile.id, is_primary: true,
           });
         }
       }
-    } catch (e) {
-      console.warn('Brukerkonto-feil:', e);
-      toast('Klient opprettet, men brukerkonto feilet', 'warn');
-    }
-
-    // Send welcome email (always, even if signup failed)
-    try {
-      const { error: mailErr } = await sb.rpc('send_welcome_email', {
-        p_to: email, p_name: cp || nm, p_company: nm,
-        p_password: finalPw, p_login_url: window.location.href,
-        p_avtale: tierNames[selTier] + ' - ' + fmtKr(avtaleKr) + '/mnd'
-      });
-      if (mailErr) toast('Epost feilet: ' + mailErr.message, 'warn');
-      else toast('Velkomst-epost sendt til ' + email);
-    } catch (e) {
-      console.warn('Epost-feil:', e);
-      toast('Epost kunne ikke sendes', 'warn');
-    }
+    } catch (e) { console.warn('Brukerkonto-feil:', e); }
   }
 
   // 4. Refresh data
