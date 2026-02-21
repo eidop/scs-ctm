@@ -738,6 +738,7 @@ tr:hover td{background:rgba(255,255,255,0.012);}
           <div class="col">
             <div class="card"><div class="ch"><div class="ct">Konto</div></div><div style="padding:18px;"><div class="fg2"><div class="fg1"><label class="fgl">Org. navn</label><input class="fgi" value="Simply Complex Solutions AS"></div><div class="fg1"><label class="fgl">Org. nr.</label><input class="fgi" value="924 182 XXX"></div></div><div class="fg1"><label class="fgl">Admin-email</label><input class="fgi" value="admin@simplycomplex.no"></div></div></div>
             <div class="card"><div class="ch"><div class="ct">Varsler</div></div><div style="padding:18px;"><div class="trow"><div><div class="tlbl">Daglig rapport</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div><div class="trow"><div><div class="tlbl">Klient-eskalering</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div><div class="trow"><div><div class="tlbl">ROI-varsler</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div></div></div>
+            <div class="card"><div class="ch"><div class="ct">Bytt passord</div></div><div style="padding:18px;"><div class="fg1"><label class="fgl">Nåværende passord</label><input class="fgi" id="a-pw-old" type="password" placeholder="Ditt nåværende passord"></div><div class="fg1"><label class="fgl">Nytt passord</label><input class="fgi" id="a-pw-new" type="password" placeholder="Minimum 6 tegn"></div><div class="fg1" style="margin-bottom:14px;"><label class="fgl">Bekreft nytt passord</label><input class="fgi" id="a-pw-confirm" type="password" placeholder="Gjenta nytt passord"></div><button class="btn btn-b btn-sm" id="btn-admin-bytt-pw">Bytt passord</button></div></div>
             <div class="card"><div class="ch"><div class="ct">GDPR & AI Act art. 4</div><span class="tag tw2">Påkrevd</span></div><div style="padding:18px;"><div class="trow"><div><div class="tlbl">AI-opplysning til kunder</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div><div class="trow"><div><div class="tlbl">Datalagring i Norge</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div></div></div>
           </div>
           <div class="col">
@@ -1012,7 +1013,7 @@ tr:hover td{background:rgba(255,255,255,0.012);}
       <div style="margin-bottom:18px;"><div style="font-family:'Instrument Sans',sans-serif;font-weight:700;font-size:19px;margin-bottom:3px;">Innstillinger</div><div style="font-size:12.5px;color:var(--m2);">Administrer din SCS-konto</div></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
         <div class="ccard"><div class="cch"><div class="cct">Kontaktinformasjon</div></div><div style="padding:18px;"><div class="fg1"><label class="fgl">Selskapsnavn</label><input class="fgi" id="c-set-co"></div><div class="fg1"><label class="fgl">Kontaktperson</label><input class="fgi" id="c-set-cp"></div><div class="fg1" style="margin-bottom:14px;"><label class="fgl">Email (skrivebeskyttet)</label><input class="fgi" id="c-set-em" readonly style="background:var(--s3);color:var(--m2);"></div><button class="btn btn-b btn-sm" id="btn-lagre-klient-set">Lagre</button></div></div>
-        <div class="ccard"><div class="cch"><div class="cct">Varsler</div></div><div style="padding:18px;"><div class="trow"><div><div class="tlbl">Daglig rapport</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div><div class="trow"><div><div class="tlbl">Eskalerings-varsler</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div><div class="trow"><div><div class="tlbl">Ukentlig sammendrag</div></div><label class="tog"><input type="checkbox" checked><span class="ts"></span></label></div></div></div>
+        <div class="ccard"><div class="cch"><div class="cct">Bytt passord</div></div><div style="padding:18px;"><div class="fg1"><label class="fgl">Nåværende passord</label><input class="fgi" id="c-pw-old" type="password" placeholder="Ditt nåværende passord"></div><div class="fg1"><label class="fgl">Nytt passord</label><input class="fgi" id="c-pw-new" type="password" placeholder="Minimum 6 tegn"></div><div class="fg1" style="margin-bottom:14px;"><label class="fgl">Bekreft nytt passord</label><input class="fgi" id="c-pw-confirm" type="password" placeholder="Gjenta nytt passord"></div><button class="btn btn-b btn-sm" id="btn-bytt-pw">Bytt passord</button></div></div>
       </div>
       <div class="ccard" style="margin-top:13px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;">
         <div><div style="font-weight:700;margin-bottom:3px;">Din avtale med SCS</div><div style="font-size:12px;color:var(--m2);">Ta kontakt med oss for å justere avtalen.</div></div>
@@ -2656,6 +2657,26 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   el('btn-open-sb').addEventListener('click', () => window.open('https://supabase.com/dashboard','_blank'));
   el('btn-open-n8n').addEventListener('click', () => window.open('https://app.n8n.cloud','_blank'));
+
+  /* ── Bytt passord (felles funksjon) ── */
+  async function doByttPw(oldId, newId, confirmId) {
+    const oldPw = el(oldId)?.value;
+    const newPw = el(newId)?.value;
+    const confirmPw = el(confirmId)?.value;
+    if (!oldPw) { toast('Fyll inn nåværende passord', 'err'); return; }
+    if (!newPw || newPw.length < 6) { toast('Nytt passord må være minst 6 tegn', 'err'); return; }
+    if (newPw !== confirmPw) { toast('Passordene stemmer ikke overens', 'err'); return; }
+    // Verify old password by re-authenticating
+    const { error: verifyErr } = await sb.auth.signInWithPassword({ email: CU.email, password: oldPw });
+    if (verifyErr) { toast('Nåværende passord er feil', 'err'); return; }
+    // Update password
+    const { error: updateErr } = await sb.auth.updateUser({ password: newPw });
+    if (updateErr) { toast('Feil: ' + updateErr.message, 'err'); return; }
+    el(oldId).value = ''; el(newId).value = ''; el(confirmId).value = '';
+    toast('Passord oppdatert');
+  }
+  el('btn-bytt-pw').addEventListener('click', () => doByttPw('c-pw-old', 'c-pw-new', 'c-pw-confirm'));
+  el('btn-admin-bytt-pw').addEventListener('click', () => doByttPw('a-pw-old', 'a-pw-new', 'a-pw-confirm'));
 
   /* ── Email/Voice save ── */
   el('btn-save-email').addEventListener('click', () => toast('Email-konfig lagret'));
