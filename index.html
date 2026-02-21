@@ -1950,7 +1950,19 @@ async function addClient() {
     }
   }
 
-  // 3. Refresh data
+  // 3. Send welcome email
+  if (email && email.includes('@')) {
+    sb.rpc('send_welcome_email', {
+      p_to: email, p_name: cp || nm, p_company: nm,
+      p_password: finalPw, p_login_url: window.location.href,
+      p_avtale: tierNames[selTier] + ' · ' + fmtKr(avtaleKr) + '/mnd'
+    }).then(({ error: mailErr }) => {
+      if (mailErr) console.warn('Velkomst-epost feilet:', mailErr.message);
+      else toast('📧 Velkomst-epost sendt til ' + email);
+    });
+  }
+
+  // 4. Refresh data
   await loadAdminData();
   renderClientsTable();
   renderUsersTable();
