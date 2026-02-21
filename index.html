@@ -1938,19 +1938,16 @@ async function addClient() {
   if (!finalPw) { const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789'; finalPw = ''; for (let i = 0; i < 12; i++) finalPw += chars[Math.floor(Math.random() * chars.length)]; }
 
   if (email && email.includes('@')) {
-    // Send welcome email immediately (session is still valid here)
-    console.log('[SCS] Sending welcome email to:', email);
+    // Send welcome email
     try {
-      const rpcRes = await sb.rpc('send_welcome_email', {
+      const { error: mailErr } = await sb.rpc('send_welcome_email', {
         p_to: email, p_name: cp || nm, p_company: nm,
         p_password: finalPw, p_login_url: window.location.href,
         p_avtale: tierNames[selTier] + ' - ' + fmtKr(avtaleKr) + '/mnd'
       });
-      console.log('[SCS] Email RPC result:', rpcRes);
-      if (rpcRes.error) toast('Epost feilet: ' + rpcRes.error.message, 'warn');
+      if (mailErr) toast('Epost feilet: ' + mailErr.message, 'warn');
       else toast('Velkomst-epost sendt til ' + email);
-    } catch (emailEx) {
-      console.error('[SCS] Email exception:', emailEx);
+    } catch (e) {
       toast('Epost feilet', 'warn');
     }
 
