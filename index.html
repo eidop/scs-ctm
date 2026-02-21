@@ -1939,13 +1939,20 @@ async function addClient() {
 
   if (email && email.includes('@')) {
     // Send welcome email immediately (session is still valid here)
-    const { error: mailErr } = await sb.rpc('send_welcome_email', {
-      p_to: email, p_name: cp || nm, p_company: nm,
-      p_password: finalPw, p_login_url: window.location.href,
-      p_avtale: tierNames[selTier] + ' - ' + fmtKr(avtaleKr) + '/mnd'
-    });
-    if (mailErr) toast('Epost feilet: ' + mailErr.message, 'warn');
-    else toast('Velkomst-epost sendt til ' + email);
+    console.log('[SCS] Sending welcome email to:', email);
+    try {
+      const rpcRes = await sb.rpc('send_welcome_email', {
+        p_to: email, p_name: cp || nm, p_company: nm,
+        p_password: finalPw, p_login_url: window.location.href,
+        p_avtale: tierNames[selTier] + ' - ' + fmtKr(avtaleKr) + '/mnd'
+      });
+      console.log('[SCS] Email RPC result:', rpcRes);
+      if (rpcRes.error) toast('Epost feilet: ' + rpcRes.error.message, 'warn');
+      else toast('Velkomst-epost sendt til ' + email);
+    } catch (emailEx) {
+      console.error('[SCS] Email exception:', emailEx);
+      toast('Epost feilet', 'warn');
+    }
 
     // 3. Create auth user + profile
     try {
