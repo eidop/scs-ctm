@@ -1132,11 +1132,26 @@ tr:hover td{background:rgba(255,255,255,0.012);}
         <div class="fg1"><label class="fgl">Navn *</label><input class="fgi" id="inv-nm" placeholder="Kari Nordmann"></div>
         <div class="fg1"><label class="fgl">E-post *</label><input class="fgi" id="inv-em" placeholder="kari@selskap.no" type="email"></div>
       </div>
-      <div style="background:rgba(47,139,255,.06);border:1px solid rgba(47,139,255,.15);border-radius:9px;padding:11px;font-size:12px;color:var(--m2);">📧 Brukeren mottar en e-post med innloggingsinstruksjoner.</div>
+      <div class="fg1" style="margin-top:10px;">
+        <label class="fgl">Rolle</label>
+        <select class="fgs" id="inv-rolle">
+          <option value="admin">Admin (full tilgang)</option>
+          <option value="client">Klient (tilknyttet klient)</option>
+        </select>
+      </div>
+      <div class="fg1" id="inv-klient-wrap" style="margin-top:10px;display:none;">
+        <label class="fgl">Tilknytt klient</label>
+        <select class="fgs" id="inv-klient"><option value="">Velg klient...</option></select>
+      </div>
+      <div class="fg1" style="margin-top:10px;">
+        <label class="fgl">Passord (valgfritt, genereres automatisk)</label>
+        <input class="fgi" id="inv-pw" placeholder="La stå tomt for auto-generering" type="text">
+      </div>
+      <div style="background:rgba(47,139,255,.06);border:1px solid rgba(47,139,255,.15);border-radius:9px;padding:11px;font-size:12px;color:var(--m2);margin-top:10px;">Brukeren mottar en velkomst-epost med innloggingsdetaljer.</div>
     </div>
     <div class="mft">
       <button class="btn btn-gh mo-close">Avbryt</button>
-      <button class="btn btn-g" id="btn-do-inviter">📧 Send invitasjon</button>
+      <button class="btn btn-g" id="btn-do-inviter">Opprett og send invitasjon</button>
     </div>
   </div>
 </div>
@@ -2503,14 +2518,63 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* ── Inviter bruker ── */
-  el('btn-invuser').addEventListener('click', () => openModal('m-invuser'));
-  el('btn-do-inviter').addEventListener('click', () => {
+  el('btn-invuser').addEventListener('click', () => {
+    const sel = el('inv-klient'); sel.innerHTML = '<option value="">Velg klient...</option>';
+    CLIENTS.forEach(c => { const o = document.createElement('option'); o.value = c.id; o.textContent = c.n; sel.appendChild(o); });
+    openModal('m-invuser');
+  });
+  el('inv-rolle').addEventListener('change', () => {
+    el('inv-klient-wrap').style.display = el('inv-rolle').value === 'client' ? 'block' : 'none';
+  });
+  el('btn-do-inviter').addEventListener('click', async () => {
     const nm = el('inv-nm').value.trim();
     const em = el('inv-em').value.trim();
-    if (!nm || !em) { toast('Navn og e-post pakrevd', 'err'); return; }
-    el('inv-nm').value = ''; el('inv-em').value = '';
+    const rolle = el('inv-rolle').value;
+    const klientId = el('inv-klient').value;
+    if (!nm || !em) { toast('Navn og e-post er pakrevd', 'err'); return; }
+    if (rolle === 'client' && !klientId) { toast('Velg en klient', 'err'); return; }
+
+    const btn = el('btn-do-inviter');
+    btn.textContent = 'Oppretter...'; btn.disabled = true;
+
+    let pw = el('inv-pw').value.trim();
+    if (!pw) { const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789'; pw = ''; for (let i = 0; i < 12; i++) pw += chars[Math.floor(Math.random() * chars.length)]; }
+
+    const { data: { session: adminSession } } = await sb.auth.getSession();
+    const { data: signUpData, error: signUpErr } = await sb.auth.signUp({ email: em, password: pw });
+    if (adminSession) await sb.auth.setSession(adminSession);
+
+    if (signUpErr) {
+      toast('Feil: ' + signUpErr.message, 'err');
+      btn.textContent = 'Opprett og send invitasjon'; btn.disabled = false;
+      return;
+    }
+
+    if (signUpData?.user) {
+      const { data: userProfile } = await sb.from('users').insert({
+        auth_id: signUpData.user.id, email: em,
+        role: rolle, display_name: nm, company: rolle === 'client' ? (CLIENTS.find(c => c.id === klientId)?.n || '') : 'SCS',
+      }).select().single();
+
+      if (userProfile && rolle === 'client' && klientId) {
+        await sb.from('client_users').insert({ client_id: klientId, user_id: userProfile.id, is_primary: false });
+      }
+
+      const company = rolle === 'admin' ? 'SCS Admin' : (CLIENTS.find(c => c.id === klientId)?.n || '');
+      sb.rpc('send_welcome_email', {
+        p_to: em, p_name: nm, p_company: company,
+        p_password: pw, p_login_url: window.location.href,
+        p_avtale: rolle === 'admin' ? 'Administrator-tilgang' : 'Klientbruker'
+      }).then(({ error: mailErr }) => {
+        if (mailErr) console.warn('Epost feilet:', mailErr.message);
+      });
+    }
+
+    el('inv-nm').value = ''; el('inv-em').value = ''; el('inv-pw').value = '';
     closeModal('m-invuser');
-    toast('Invitasjon sendt til ' + nm);
+    renderUsersTable();
+    toast('Bruker opprettet og velkomst-epost sendt til ' + nm);
+    btn.textContent = 'Opprett og send invitasjon'; btn.disabled = false;
   });
 
   /* ── Klient: sok og filter ── */
